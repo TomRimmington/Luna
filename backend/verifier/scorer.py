@@ -80,7 +80,7 @@ def compute_scores(
         elif c.status == "verified" and c.confidence > 85:
             risk -= 5
 
-    risk = int(risk / len(scored) * 1.5)
+    risk = int(risk / len(scored) * 1.1)
     risk = max(5, min(95, risk))
     trust_initial = 100 - risk
 
