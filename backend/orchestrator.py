@@ -169,15 +169,26 @@ async def run_pipeline(
         latency=0,
         cost=round(total_cost, 6),
     )
-
-
 def compute_final_trust(claims: list, was_corrected: bool) -> int:
     if not claims:
-        return 50
+        return 65
+
     verified = [c for c in claims if c.status == "verified"]
-    total_conf = sum(c.confidence for c in claims)
-    verified_conf = sum(c.confidence for c in verified)
-    base = int((verified_conf / total_conf * 100)) if total_conf > 0 else 50
+    uncertain = [c for c in claims if c.status == "uncertain"]
+    contradicted = [c for c in claims if c.status == "contradicted"]
+    total = len(claims)
+
+    if total > 0:
+        verified_score = len(verified) * 100
+        uncertain_score = len(uncertain) * 65
+        contradicted_score = len(contradicted) * 10
+        base = int((verified_score + uncertain_score + contradicted_score) / total)
+    else:
+        base = 65
+
     if was_corrected:
         base = min(98, base + 10)
-    return max(5, min(98, base))
+
+    return max(55, min(95, base))
+
+    
