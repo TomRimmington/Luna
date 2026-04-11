@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Zap, DollarSign, AlertTriangle } from 'lucide-react';
-import type { Model, RunResult } from './types';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, ChevronRight, Zap, DollarSign, AlertTriangle } from 'lucide-react';
+import type { Model, RunResult, Claim, ReasoningStep, PipelineStage } from './types';
 import { MODELS } from './mockData';
 
 interface LeftPanelProps {
@@ -8,8 +8,296 @@ interface LeftPanelProps {
   onModelChange: (model: Model) => void;
   result: RunResult | null;
   isRunning: boolean;
+  streamedRaw?: string;
+  streamedClaims?: Claim[];
+  reasoningTrace?: ReasoningStep[];
+  stage?: PipelineStage;
 }
 
+// ── Annotated Text ───────────────────────────────────────────────
+function AnnotatedText({ text, claims }: { text: string; claims: Claim[] }) {
+  const segments = useMemo(() => {
+    const spanned = claims
+      .filter(c => c.sourceSpan)
+      .sort((a, b) => a.sourceSpan!.start - b.sourceSpan!.start);
+
+    if (spanned.length === 0) return [{ text, claim: null }];
+
+    const result: { text: string; claim: Claim | null }[] = [];
+    let cursor = 0;
+
+    for (const claim of spanned) {
+      const { start, end } = claim.sourceSpan!;
+      if (start < cursor) continue;
+      if (start > cursor) {
+        result.push({ text: text.slice(cursor, start), claim: null });
+      }
+      result.push({ text: text.slice(start, end), claim });
+      cursor = end;
+    }
+    if (cursor < text.length) {
+      result.push({ text: text.slice(cursor), claim: null });
+    }
+    return result;
+  }, [text, claims]);
+
+  const statusColor: Record<string, string> = {
+    verified: '#3fb950',
+    uncertain: '#d29922',
+    contradicted: '#f85149',
+  };
+
+  return (
+    <>
+      {segments.map((seg, i) => {
+        if (!seg.claim) return <span key={i}>{seg.text}</span>;
+        const color = statusColor[seg.claim.status] || '#6e6e6e';
+        return (
+          <span
+            key={i}
+            style={{
+              borderBottom: `2px solid ${color}`,
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+              borderRadius: '1px',
+            }}
+            title={`"${seg.claim.text}" — ${seg.claim.status} (${seg.claim.confidence}%)`}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLSpanElement).style.background = `${color}18`;
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLSpanElement).style.background = 'transparent';
+            }}
+          >
+            {seg.text}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+// ── Trust Score Arc ──────────────────────────────────────────────
+function TrustScoreArc({ initial, final }: { initial: number; final: number }) {
+  const [displayed, setDisplayed] = useState(initial);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (final <= initial) {
+      setDisplayed(final);
+      return;
+    }
+    setAnimating(true);
+    const start = performance.now();
+    const duration = 1200;
+
+    function step(now: number) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(initial + (final - initial) * eased);
+      setDisplayed(current);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setAnimating(false);
+      }
+    }
+    requestAnimationFrame(step);
+  }, [initial, final]);
+
+  const delta = final - initial;
+  const deltaColor = delta >= 0 ? '#3fb950' : '#f85149';
+  const barColor = (val: number) =>
+    val >= 80 ? '#3fb950' : val >= 50 ? '#d29922' : '#f85149';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid #222',
+        borderRadius: '5px',
+        padding: '8px 12px',
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '9px',
+          color: '#6e6e6e',
+          letterSpacing: '0.1em',
+          flexShrink: 0,
+        }}
+      >
+        TRUST
+      </span>
+
+      {/* Initial bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
+        <div style={{ flex: 1, height: '4px', background: '#1e1e1e', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ width: `${initial}%`, height: '100%', background: barColor(initial), borderRadius: '2px', opacity: 0.5 }} />
+        </div>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a', width: '28px', textAlign: 'right' }}>
+          {initial}%
+        </span>
+      </div>
+
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#333' }}>→</span>
+
+      {/* Final bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
+        <div style={{ flex: 1, height: '4px', background: '#1e1e1e', borderRadius: '2px', overflow: 'hidden' }}>
+          <div
+            style={{
+              width: `${displayed}%`,
+              height: '100%',
+              background: barColor(displayed),
+              borderRadius: '2px',
+              transition: animating ? 'none' : 'width 0.3s',
+            }}
+          />
+        </div>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: barColor(displayed), fontWeight: 600, width: '28px', textAlign: 'right' }}>
+          {displayed}%
+        </span>
+      </div>
+
+      {/* Delta pill */}
+      <div
+        style={{
+          background: `${deltaColor}15`,
+          border: `1px solid ${deltaColor}30`,
+          borderRadius: '3px',
+          padding: '1px 5px',
+          flexShrink: 0,
+        }}
+      >
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: deltaColor, fontWeight: 600 }}>
+          {delta >= 0 ? '▲' : '▼'}+{Math.abs(delta)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Reasoning Trace Drawer ──────────────────────────────────────
+function ReasoningTraceDrawer({ trace }: { trace: ReasoningStep[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+
+  const genTrace = trace.filter(t => t.agent === 'generator');
+  if (genTrace.length === 0) return null;
+
+  const toggleStep = (id: string) => {
+    setExpandedSteps(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const statusDot = (status: string) => {
+    if (status === 'complete') return '#8a8a8a';
+    if (status === 'active') return '#d29922';
+    return '#f85149';
+  };
+
+  return (
+    <div style={{ borderBottom: '1px solid #222', flexShrink: 0 }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          width: '100%',
+          padding: '6px 14px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.02)')}
+        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
+      >
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#4a4a4a' }}>
+          {expanded ? '▾' : '▸'}
+        </span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#5a5a5a', letterSpacing: '0.1em' }}>
+          REASONING TRACE
+        </span>
+        <span
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid #2e2e2e',
+            borderRadius: '8px',
+            padding: '0 5px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '9px',
+            color: '#5a5a5a',
+          }}
+        >
+          {genTrace.length}
+        </span>
+      </button>
+
+      {expanded && (
+        <div style={{ padding: '0 14px 8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {genTrace.map(step => (
+            <div
+              key={step.id}
+              style={{ animation: 'fadeIn 0.3s ease', paddingLeft: '8px', borderLeft: '2px solid #222' }}
+            >
+              <button
+                onClick={() => toggleStep(step.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '3px 0',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
+              >
+                <div
+                  style={{
+                    width: '5px',
+                    height: '5px',
+                    borderRadius: '50%',
+                    background: statusDot(step.status),
+                    flexShrink: 0,
+                    animation: step.status === 'active' ? 'pulse 1s ease-in-out infinite' : 'none',
+                  }}
+                />
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#8a8a8a' }}>
+                  {step.action}
+                </span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#333', marginLeft: 'auto' }}>
+                  {step.timestamp}
+                </span>
+              </button>
+              {expandedSteps.has(step.id) && (
+                <div style={{ padding: '4px 0 4px 11px' }}>
+                  <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a', lineHeight: 1.6, margin: 0 }}>
+                    {step.detail}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Hallucination Badge ─────────────────────────────────────────
 function HallucinationBadge({ risk }: { risk: number }) {
   const color =
     risk < 20
@@ -44,7 +332,17 @@ function HallucinationBadge({ risk }: { risk: number }) {
   );
 }
 
-export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: LeftPanelProps) {
+// ── Main Component ──────────────────────────────────────────────
+export function LeftPanel({
+  selectedModel,
+  onModelChange,
+  result,
+  isRunning,
+  streamedRaw = '',
+  streamedClaims = [],
+  reasoningTrace = [],
+  stage = 'idle',
+}: LeftPanelProps) {
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -59,7 +357,21 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const lines = result?.rawOutput ? result.rawOutput.split('\n') : [];
+  // Auto-scroll during streaming
+  useEffect(() => {
+    if (isRunning && outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [streamedRaw, isRunning]);
+
+  const isStreaming = isRunning && stage === 'generating' && streamedRaw.length > 0;
+  const displayText = isStreaming ? streamedRaw : (result?.rawOutput || streamedRaw || '');
+  const lines = displayText ? displayText.split('\n') : [];
+
+  const activeClaims = result?.trust.claims ?? (streamedClaims.length > 0 ? streamedClaims : []);
+  const hasClaims = activeClaims.length > 0 && activeClaims.some(c => c.sourceSpan);
+
+  const trustData = result?.trust;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#181818' }}>
@@ -80,7 +392,8 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
               width: '5px',
               height: '5px',
               borderRadius: '50%',
-              background: '#5a5a5a',
+              background: isRunning ? '#d29922' : result ? '#8a8a8a' : '#5a5a5a',
+              animation: isRunning ? 'pulse 1s ease-in-out infinite' : 'none',
             }}
           />
           <span
@@ -96,7 +409,6 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
           </span>
         </div>
 
-        {/* Latency + Cost badges */}
         {result && (
           <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
             <div
@@ -160,7 +472,6 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
             onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.borderColor = '#4a4a4a')}
             onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.borderColor = '#2e2e2e')}
           >
-            {/* Green circle removed */}
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc' }}>
               {selectedModel.name}
             </span>
@@ -213,7 +524,6 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {/* Green circle removed */}
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc' }}>
                       {model.name}
                     </span>
@@ -233,6 +543,9 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
         </div>
       </div>
 
+      {/* Reasoning Trace Drawer */}
+      {reasoningTrace.length > 0 && <ReasoningTraceDrawer trace={reasoningTrace} />}
+
       {/* Output Area */}
       <div
         ref={outputRef}
@@ -244,7 +557,8 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
           scrollbarColor: '#2e2e2e transparent',
         }}
       >
-        {isRunning && (
+        {/* Skeleton while running with no content yet */}
+        {isRunning && lines.length === 0 && (
           <div style={{ padding: '0 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {[...Array(9)].map((_, i) => (
               <div
@@ -262,6 +576,7 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
           </div>
         )}
 
+        {/* Empty state */}
         {!isRunning && lines.length === 0 && (
           <div
             style={{
@@ -284,7 +599,8 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
           </div>
         )}
 
-        {!isRunning && lines.length > 0 && (
+        {/* Line-numbered output with inline annotations */}
+        {lines.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {lines.map((line, i) => (
               <div
@@ -325,7 +641,28 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
                     flex: 1,
                   }}
                 >
-                  {line || '\u00A0'}
+                  {hasClaims && !isStreaming ? (
+                    <AnnotatedLineSegment
+                      lineText={line || '\u00A0'}
+                      lineStartOffset={getLineStartOffset(displayText, i)}
+                      claims={activeClaims}
+                    />
+                  ) : (
+                    line || '\u00A0'
+                  )}
+                  {isStreaming && i === lines.length - 1 && (
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: '2px',
+                        height: '14px',
+                        background: '#cccccc',
+                        animation: 'blink 0.8s ease-in-out infinite',
+                        verticalAlign: 'text-bottom',
+                        marginLeft: '1px',
+                      }}
+                    />
+                  )}
                 </span>
               </div>
             ))}
@@ -333,14 +670,24 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
         )}
       </div>
 
-      {/* Bottom: Hallucination Risk */}
+      {/* Bottom: Trust Score Arc + Hallucination Risk */}
       <div
         style={{
           padding: '10px 14px',
+          paddingBottom: '120px',
           borderTop: '1px solid #2a2a2a',
           flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
         }}
       >
+        {trustData && trustData.trustScoreInitial > 0 && (
+          <TrustScoreArc
+            initial={trustData.trustScoreInitial}
+            final={trustData.trustScoreFinal}
+          />
+        )}
         {result ? (
           <HallucinationBadge risk={result.trust.hallucinationRisk} />
         ) : (
@@ -364,4 +711,79 @@ export function LeftPanel({ selectedModel, onModelChange, result, isRunning }: L
       </div>
     </div>
   );
+}
+
+function getLineStartOffset(fullText: string, lineIndex: number): number {
+  let offset = 0;
+  const lines = fullText.split('\n');
+  for (let i = 0; i < lineIndex && i < lines.length; i++) {
+    offset += lines[i].length + 1;
+  }
+  return offset;
+}
+
+function AnnotatedLineSegment({
+  lineText,
+  lineStartOffset,
+  claims,
+}: {
+  lineText: string;
+  lineStartOffset: number;
+  claims: Claim[];
+}) {
+  const lineEnd = lineStartOffset + lineText.length;
+
+  const overlapping = claims
+    .filter(c => c.sourceSpan && c.sourceSpan.start < lineEnd && c.sourceSpan.end > lineStartOffset)
+    .sort((a, b) => a.sourceSpan!.start - b.sourceSpan!.start);
+
+  if (overlapping.length === 0) return <>{lineText}</>;
+
+  const statusColor: Record<string, string> = {
+    verified: '#3fb950',
+    uncertain: '#d29922',
+    contradicted: '#f85149',
+  };
+
+  const segments: React.ReactNode[] = [];
+  let cursor = lineStartOffset;
+
+  for (const claim of overlapping) {
+    const spanStart = Math.max(claim.sourceSpan!.start, lineStartOffset);
+    const spanEnd = Math.min(claim.sourceSpan!.end, lineEnd);
+
+    if (spanStart > cursor) {
+      segments.push(lineText.slice(cursor - lineStartOffset, spanStart - lineStartOffset));
+    }
+
+    const color = statusColor[claim.status] || '#6e6e6e';
+    segments.push(
+      <span
+        key={claim.id}
+        style={{
+          borderBottom: `2px solid ${color}`,
+          cursor: 'pointer',
+          borderRadius: '1px',
+          transition: 'background 0.15s',
+        }}
+        title={`"${claim.text}" — ${claim.status} (${claim.confidence}%)`}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLSpanElement).style.background = `${color}18`;
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLSpanElement).style.background = 'transparent';
+        }}
+      >
+        {lineText.slice(spanStart - lineStartOffset, spanEnd - lineStartOffset)}
+      </span>
+    );
+
+    cursor = spanEnd;
+  }
+
+  if (cursor < lineEnd) {
+    segments.push(lineText.slice(cursor - lineStartOffset));
+  }
+
+  return <>{segments}</>;
 }

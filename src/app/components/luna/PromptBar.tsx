@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, ChevronDown, Play, Loader } from 'lucide-react';
-import type { Model } from './types';
+import type { Model, PipelineStage } from './types';
 import { MODELS } from './mockData';
 
 interface PromptBarProps {
@@ -8,9 +8,21 @@ interface PromptBarProps {
   onModelChange: (model: Model) => void;
   onRun: (prompt: string) => void;
   isRunning: boolean;
+  stage?: PipelineStage;
 }
 
-export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: PromptBarProps) {
+const stageLabels: Partial<Record<PipelineStage, string>> = {
+  generating: 'GENERATING...',
+  extracting: 'EXTRACTING CLAIMS...',
+  verifying: 'VERIFYING...',
+  critiquing: 'CRITIQUING...',
+  judging: 'JUDGING...',
+  correcting: 'CORRECTING...',
+  compressing: 'COMPRESSING...',
+  auditing: 'AUDITING...',
+};
+
+export function PromptBar({ selectedModel, onModelChange, onRun, isRunning, stage = 'idle' }: PromptBarProps) {
   const [prompt, setPrompt] = useState('');
   const [focused, setFocused] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
@@ -51,6 +63,7 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
   };
 
   const canRun = prompt.trim().length > 0 && !isRunning;
+  const stageLabel = stageLabels[stage];
 
   return (
     <div
@@ -76,7 +89,6 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
             : '0 8px 32px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Text Input Area - Full width */}
         <textarea
           ref={textareaRef}
           value={prompt}
@@ -105,7 +117,6 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
           }}
         />
 
-        {/* Bottom Row: Attachment, Model Selector (left) + Run Button (right) */}
         <div
           style={{
             display: 'flex',
@@ -116,7 +127,6 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Attachment Button */}
             <button
               style={{
                 display: 'flex',
@@ -143,7 +153,6 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
               <Paperclip size={12} style={{ color: '#5a5a5a' }} />
             </button>
 
-            {/* Model Selector */}
             <div ref={dropdownRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
@@ -224,7 +233,6 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
             </div>
           </div>
 
-          {/* Run Button */}
           <button
             onClick={handleRun}
             disabled={!canRun}
@@ -263,11 +271,36 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning }: Pr
         </div>
       </div>
 
-      {/* Hint */}
-      <div style={{ textAlign: 'center', marginTop: '5px' }}>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#252525' }}>
-          Luna can make mistakes. Check important info.
-        </span>
+      {/* Hint / Stage Indicator */}
+      <div style={{ textAlign: 'center', marginTop: '5px', height: '16px' }}>
+        {isRunning && stageLabel ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+            <div
+              style={{
+                width: '5px',
+                height: '5px',
+                borderRadius: '50%',
+                background: '#d29922',
+                animation: 'pulse 1s ease-in-out infinite',
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10px',
+                color: '#d29922',
+                letterSpacing: '0.05em',
+                animation: 'fadeIn 0.2s ease',
+              }}
+            >
+              {stageLabel}
+            </span>
+          </div>
+        ) : (
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#252525' }}>
+            ⌘+Enter to run · LUNA v0.4.1 · Trust Engine enabled
+          </span>
+        )}
       </div>
     </div>
   );
