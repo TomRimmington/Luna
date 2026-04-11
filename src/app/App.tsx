@@ -43,6 +43,7 @@ export default function App() {
   const [compression, setCompression] = useState<CompressionMetrics | null>(null);
   const [audit, setAudit] = useState<AuditFinding[]>([]);
   const [showAuditor, setShowAuditor] = useState(false);
+  const [webSearch, setWebSearch] = useState(true);
   const [panelLayout, setPanelLayout] = useState<'split' | 'left' | 'right'>('split');
 
   const playbackRef = useRef(false);
@@ -78,7 +79,8 @@ export default function App() {
         model_a: modelA,
         model_b: modelB,
         judge_model: judgeModel.id,
-      }, { timeout: 90000 });
+        web_search: webSearch,
+      }, { timeout: 180000 });
 
       const data = response.data;
       const measured = Date.now() - startTime;
@@ -122,7 +124,7 @@ export default function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, selectedModel, judgeModel, resetStreamState]);
+  }, [isRunning, selectedModel, judgeModel, webSearch, resetStreamState]);
 
   const loadMockInstant = useCallback(() => {
     setIsRunning(false);
@@ -385,6 +387,8 @@ export default function App() {
         onModelChange={setSelectedModel}
         judgeModel={judgeModel}
         onJudgeChange={setJudgeModel}
+        webSearch={webSearch}
+        onWebSearchChange={setWebSearch}
         onRun={handleRun}
         isRunning={isRunning}
         stage={stage}

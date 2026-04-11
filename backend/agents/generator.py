@@ -41,6 +41,7 @@ async def generate_response(
         model=model_name,
         max_tokens=600,
         temperature=0.3,
+        timeout=30,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user_content},

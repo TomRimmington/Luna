@@ -31,6 +31,7 @@ async def extract_claims(raw_output: str, judge_model: str = DEFAULT_JUDGE) -> t
         model=judge_model,
         max_tokens=800,
         temperature=0.1,
+        timeout=30,
         messages=[
             {
                 "role": "user",

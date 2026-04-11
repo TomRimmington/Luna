@@ -45,6 +45,7 @@ async def run_judge(
         model=judge_model,
         max_tokens=300,
         temperature=0.2,
+        timeout=30,
         messages=[
             {
                 "role": "user",

@@ -7,8 +7,7 @@ from models import (
 )
 from agents.generator import generate_response
 from agents.claim_extractor import extract_claims
-from agents.critic import run_critic
-from agents.judge import run_judge
+from agents.critic import run_critic_and_judge
 from agents.compressor import compress_context
 from agents.auditor import run_auditor
 from verifier.search import verify_claims
@@ -21,6 +20,7 @@ async def run_pipeline(
     model_a: str,
     model_b: str,
     judge_model: str = DEFAULT_JUDGE,
+    web_search: bool = True,
 ) -> RunResult:
     """
     Runs 2 user-selected models in parallel.
@@ -70,8 +70,8 @@ async def run_pipeline(
         timestamp=elapsed(), status="complete",
     ))
 
-    # Step 4: Verify with Wikipedia
-    evidence, verify_cost, verify_reasoning = await verify_claims(claims)
+    # Step 4: Verify claims against external sources
+    evidence, verify_cost, verify_reasoning = await verify_claims(claims, web_search=web_search)
     total_cost += verify_cost
     reasoning_trace.append(ReasoningStep(
         id="r3", agent="verifier",
@@ -85,27 +85,21 @@ async def run_pipeline(
         claims, evidence
     )
 
-    # Step 6: Judge critiques both
-    critic_feed, critic_cost, critic_reasoning = await run_critic(
+    # Step 6+7: Critique + Judge ruling in a single LLM call
+    critic_feed, ruling, cj_cost, cj_reasoning = await run_critic_and_judge(
         combined_output, scored_claims, evidence, judge_model=judge_model
     )
-    total_cost += critic_cost
+    total_cost += cj_cost
     reasoning_trace.append(ReasoningStep(
         id="r4", agent="critic",
         action=f"Judge ({judge_model}) evaluated both answers",
-        detail=critic_reasoning,
+        detail=cj_reasoning,
         timestamp=elapsed(), status="complete",
     ))
-
-    # Step 7: Judge rules
-    ruling, judge_cost, judge_reasoning = await run_judge(
-        critic_feed, scored_claims, judge_model=judge_model
-    )
-    total_cost += judge_cost
     reasoning_trace.append(ReasoningStep(
         id="r5", agent="judge",
         action="Correction ruling issued",
-        detail=judge_reasoning,
+        detail=f"Correction {'required' if ruling.get('needs_correction') else 'not required'}.",
         timestamp=elapsed(), status="complete",
     ))
 

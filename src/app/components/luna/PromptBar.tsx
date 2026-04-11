@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Paperclip, ChevronDown, Play, Loader } from 'lucide-react';
+import { Paperclip, ChevronDown, Play, Loader, Globe } from 'lucide-react';
 import type { Model, PipelineStage } from './types';
 import { MODELS } from './mockData';
 
@@ -8,6 +8,8 @@ interface PromptBarProps {
   onModelChange: (model: Model) => void;
   judgeModel: Model;
   onJudgeChange: (model: Model) => void;
+  webSearch: boolean;
+  onWebSearchChange: (enabled: boolean) => void;
   onRun: (prompt: string) => void;
   isRunning: boolean;
   stage?: PipelineStage;
@@ -24,7 +26,7 @@ const stageLabels: Partial<Record<PipelineStage, string>> = {
   auditing: 'AUDITING...',
 };
 
-export function PromptBar({ selectedModel, onModelChange, judgeModel, onJudgeChange, onRun, isRunning, stage = 'idle' }: PromptBarProps) {
+export function PromptBar({ selectedModel, onModelChange, judgeModel, onJudgeChange, webSearch, onWebSearchChange, onRun, isRunning, stage = 'idle' }: PromptBarProps) {
   const [prompt, setPrompt] = useState('');
   const [focused, setFocused] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
@@ -158,6 +160,46 @@ export function PromptBar({ selectedModel, onModelChange, judgeModel, onJudgeCha
               title="Attach file"
             >
               <Paperclip size={12} style={{ color: '#9e9e9e' }} />
+            </button>
+
+            <button
+              onClick={() => onWebSearchChange(!webSearch)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                height: '28px',
+                padding: '4px 8px',
+                background: webSearch ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                border: `1px solid ${webSearch ? 'rgba(59, 130, 246, 0.35)' : '#272727'}`,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.12s',
+              }}
+              onMouseEnter={e => {
+                if (!webSearch) {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#3a3a3a';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!webSearch) {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#272727';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                }
+              }}
+              title={webSearch ? 'Web search enabled (click to disable)' : 'Web search disabled (click to enable)'}
+            >
+              <Globe size={12} style={{ color: webSearch ? '#3b82f6' : '#9e9e9e' }} />
+              <span style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '9px',
+                color: webSearch ? '#3b82f6' : '#6e6e6e',
+                letterSpacing: '0.04em',
+              }}>
+                WEB
+              </span>
             </button>
 
             <div ref={dropdownRef} style={{ position: 'relative' }}>

@@ -60,6 +60,7 @@ async def run_auditor(
         model=judge_model,
         max_tokens=400,
         temperature=0.3,
+        timeout=30,
         messages=[
             {
                 "role": "user",

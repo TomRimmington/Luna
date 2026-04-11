@@ -7,6 +7,7 @@ class RunRequest(BaseModel):
     model_a: str = "anthropic/claude-sonnet-4.6"
     model_b: str = "meta-llama/llama-3.3-70b-instruct"
     judge_model: str = "openai/gpt-4o"
+    web_search: bool = True
 
 class SourceSpan(BaseModel):
     start: int

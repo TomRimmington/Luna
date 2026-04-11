@@ -28,7 +28,7 @@ MODELS = {
     "openai/gpt-4o-mini": {"name": "GPT-4o Mini", "provider": "OpenAI", "cost_per_1k": 0.0003},
     # Meta (free on OpenRouter)
     "meta-llama/llama-3.3-70b-instruct": {"name": "Llama 3.3 70B", "provider": "Meta", "cost_per_1k": 0.0},
-    "meta-llama/llama-3.1-8b-instruct:free": {"name": "Llama 3.1 8B", "provider": "Meta", "cost_per_1k": 0.0},
+    "meta-llama/llama-3.1-8b-instruct": {"name": "Llama 3.1 8B", "provider": "Meta", "cost_per_1k": 0.0},
     # Google
     "google/gemini-2.0-flash-001": {"name": "Gemini 2.0 Flash", "provider": "Google", "cost_per_1k": 0.0001},
 }

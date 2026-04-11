@@ -45,6 +45,7 @@ async def run(request: RunRequest):
             model_a=request.model_a,
             model_b=request.model_b,
             judge_model=request.judge_model,
+            web_search=request.web_search,
         )
         result.latency = int((time.time() - start) * 1000)
         return result

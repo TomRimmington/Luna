@@ -7,7 +7,7 @@ export const MODELS: Model[] = [
   { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'OpenAI', costPer1k: 0.005 },
   { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', costPer1k: 0.0003 },
   { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B', provider: 'Meta', costPer1k: 0.0 },
-  { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B', provider: 'Meta', costPer1k: 0.0 },
+  { id: 'meta-llama/llama-3.1-8b-instruct', name: 'Llama 3.1 8B', provider: 'Meta', costPer1k: 0.0 },
   { id: 'google/gemini-2.0-flash-001', name: 'Gemini 2.0 Flash', provider: 'Google', costPer1k: 0.0001 },
 ];
 
