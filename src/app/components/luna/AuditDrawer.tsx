@@ -114,7 +114,7 @@ export function AuditDrawer({ open, onClose, findings }: AuditDrawerProps) {
       >
         {findings.length === 0 && (
           <div style={{ padding: '24px 0', textAlign: 'center' }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#333' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#7a7a7a' }}>
               {'// no audit data available'}
             </span>
           </div>
@@ -188,7 +188,7 @@ export function AuditDrawer({ open, onClose, findings }: AuditDrawerProps) {
                 style={{
                   fontFamily: 'Inter, sans-serif',
                   fontSize: '11px',
-                  color: '#6e6e6e',
+                  color: '#cccccc',
                   lineHeight: 1.6,
                   margin: 0,
                 }}
@@ -234,7 +234,7 @@ export function AuditDrawer({ open, onClose, findings }: AuditDrawerProps) {
                 borderTop: '1px solid rgba(163, 113, 247, 0.1)',
               }}
             >
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#6e6e6e' }}>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
                 Overall: {findings.some(f => f.severity === 'critical') ? 'Intervention recommended' : 'No intervention required'}
               </span>
             </div>
@@ -257,7 +257,7 @@ function HealthRow({ label, finding }: { label: string; finding?: AuditFinding }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a', width: '60px' }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0', width: '60px' }}>
         {label}:
       </span>
       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color }}>

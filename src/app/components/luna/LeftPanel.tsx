@@ -127,7 +127,7 @@ function TrustScoreArc({ initial, final }: { initial: number; final: number }) {
         style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '9px',
-          color: '#6e6e6e',
+          color: '#cccccc',
           letterSpacing: '0.1em',
           flexShrink: 0,
         }}
@@ -140,12 +140,12 @@ function TrustScoreArc({ initial, final }: { initial: number; final: number }) {
         <div style={{ flex: 1, height: '4px', background: '#1e1e1e', borderRadius: '2px', overflow: 'hidden' }}>
           <div style={{ width: `${initial}%`, height: '100%', background: barColor(initial), borderRadius: '2px', opacity: 0.5 }} />
         </div>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a', width: '28px', textAlign: 'right' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e', width: '28px', textAlign: 'right' }}>
           {initial}%
         </span>
       </div>
 
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#333' }}>→</span>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>→</span>
 
       {/* Final bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
@@ -176,7 +176,7 @@ function TrustScoreArc({ initial, final }: { initial: number; final: number }) {
         }}
       >
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: deltaColor, fontWeight: 600 }}>
-          {delta >= 0 ? '▲' : '▼'}+{Math.abs(delta)}
+          {delta >= 0 ? '▲' : '▼'}{delta >= 0 ? '+' : '−'}{Math.abs(delta)}
         </span>
       </div>
     </div>
@@ -223,10 +223,10 @@ function ReasoningTraceDrawer({ trace }: { trace: ReasoningStep[] }) {
         onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.02)')}
         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
       >
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#4a4a4a' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>
           {expanded ? '▾' : '▸'}
         </span>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#5a5a5a', letterSpacing: '0.1em' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#b0b0b0', letterSpacing: '0.1em' }}>
           REASONING TRACE
         </span>
         <span
@@ -237,7 +237,7 @@ function ReasoningTraceDrawer({ trace }: { trace: ReasoningStep[] }) {
             padding: '0 5px',
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '9px',
-            color: '#5a5a5a',
+            color: '#b0b0b0',
           }}
         >
           {genTrace.length}
@@ -275,16 +275,16 @@ function ReasoningTraceDrawer({ trace }: { trace: ReasoningStep[] }) {
                     animation: step.status === 'active' ? 'pulse 1s ease-in-out infinite' : 'none',
                   }}
                 />
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#8a8a8a' }}>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#cccccc' }}>
                   {step.action}
                 </span>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#333', marginLeft: 'auto' }}>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#7a7a7a', marginLeft: 'auto' }}>
                   {step.timestamp}
                 </span>
               </button>
               {expandedSteps.has(step.id) && (
                 <div style={{ padding: '4px 0 4px 11px' }}>
-                  <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a', lineHeight: 1.6, margin: 0 }}>
+                  <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0', lineHeight: 1.6, margin: 0 }}>
                     {step.detail}
                   </p>
                 </div>
@@ -319,7 +319,7 @@ function HallucinationBadge({ risk }: { risk: number }) {
       }}
     >
       <AlertTriangle size={12} style={{ color: color.text }} />
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#6e6e6e', letterSpacing: '0.07em' }}>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#cccccc', letterSpacing: '0.07em' }}>
         HALLUCINATION RISK
       </span>
       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: color.text, fontWeight: 600 }}>
@@ -400,7 +400,7 @@ export function LeftPanel({
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '10px',
-              color: '#6e6e6e',
+              color: '#cccccc',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
             }}
@@ -422,8 +422,8 @@ export function LeftPanel({
                 padding: '2px 7px',
               }}
             >
-              <Zap size={9} style={{ color: '#7a7a7a' }} />
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#8a8a8a' }}>
+              <Zap size={9} style={{ color: '#b0b0b0' }} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#cccccc' }}>
                 {result.latency}ms
               </span>
             </div>
@@ -438,8 +438,8 @@ export function LeftPanel({
                 padding: '2px 7px',
               }}
             >
-              <DollarSign size={9} style={{ color: '#7a7a7a' }} />
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#8a8a8a' }}>
+              <DollarSign size={9} style={{ color: '#b0b0b0' }} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#cccccc' }}>
                 ${result.cost.toFixed(4)}
               </span>
             </div>
@@ -475,10 +475,10 @@ export function LeftPanel({
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc' }}>
               {selectedModel.name}
             </span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>
               {selectedModel.provider}
             </span>
-            <ChevronDown size={11} style={{ color: '#5a5a5a', marginLeft: '2px' }} />
+            <ChevronDown size={11} style={{ color: '#9e9e9e', marginLeft: '2px' }} />
           </button>
 
           {modelDropdownOpen && (
@@ -529,10 +529,10 @@ export function LeftPanel({
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#6e6e6e' }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
                       {model.latency}ms
                     </span>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#4a4a4a' }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>
                       ${model.costPer1k}/1k
                     </span>
                   </div>
@@ -589,10 +589,10 @@ export function LeftPanel({
               padding: '40px 24px',
             }}
           >
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#2e2e2e' }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#7a7a7a' }}>
               {'// awaiting input'}
             </div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#252525', textAlign: 'center', lineHeight: 1.7 }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#6e6e6e', textAlign: 'center', lineHeight: 1.7 }}>
               Submit a prompt to generate model output.<br />
               LUNA will analyze and verify the response.
             </div>
@@ -619,7 +619,7 @@ export function LeftPanel({
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: '11px',
-                    color: '#333333',
+                    color: '#5a5a5a',
                     width: '32px',
                     flexShrink: 0,
                     paddingRight: '14px',
@@ -702,8 +702,8 @@ export function LeftPanel({
               gap: '7px',
             }}
           >
-            <AlertTriangle size={11} style={{ color: '#2e2e2e' }} />
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#2e2e2e', letterSpacing: '0.07em' }}>
+            <AlertTriangle size={11} style={{ color: '#7a7a7a' }} />
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#7a7a7a', letterSpacing: '0.07em' }}>
               HALLUCINATION RISK — awaiting analysis
             </span>
           </div>

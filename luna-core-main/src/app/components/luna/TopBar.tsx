@@ -9,17 +9,13 @@ import {
   Columns2,
   LayoutGrid,
   X,
-  Shield,
 } from 'lucide-react';
 
 interface TopBarProps {
   onSearch?: (query: string) => void;
-  showAuditor?: boolean;
-  onToggleAudit?: () => void;
-  hasAuditData?: boolean;
 }
 
-export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
+export function TopBar({ onSearch }: TopBarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +52,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
     setSearchValue('');
   };
 
+  // Icon button style helper
   const iconBtn: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -88,6 +85,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
     >
       {/* LEFT — nav controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '2px', minWidth: '160px' }}>
+        {/* Hamburger / menu */}
         <button
           style={iconBtn}
           title="Toggle menu"
@@ -103,30 +101,38 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
 
         <div style={{ width: '4px' }} />
 
-        <button style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }} title="Go back">
+        {/* Back */}
+        <button
+          style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }}
+          title="Go back"
+        >
           <ChevronLeft size={15} />
         </button>
-        <button style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }} title="Go forward">
+        {/* Forward */}
+        <button
+          style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }}
+          title="Go forward"
+        >
           <ChevronRight size={15} />
         </button>
 
         <div style={{ width: '6px' }} />
 
+        {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#b0b0b0' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#6e6e6e' }}>
             luna
           </span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#7a7a7a' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#4a4a4a' }}>
             /
           </span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#8a8a8a' }}>
             workspace
           </span>
         </div>
-
       </div>
 
-      {/* CENTER — title / search bar */}
+      {/* CENTER — VS Code–style title / search bar */}
       <div
         style={{
           position: 'absolute',
@@ -136,6 +142,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
         }}
       >
         {searchOpen ? (
+          /* Expanded search input */
           <div
             style={{
               display: 'flex',
@@ -183,6 +190,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
             </button>
           </div>
         ) : (
+          /* Title / folder pill — click to search */
           <button
             onClick={() => setSearchOpen(true)}
             style={{
@@ -224,7 +232,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '10px',
-                color: '#7a7a7a',
+                color: '#4a4a4a',
                 marginLeft: '4px',
               }}
             >
@@ -267,30 +275,6 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
         <div style={{ width: '1px', height: '14px', background: '#2e2e2e' }} />
         <div style={{ width: '6px' }} />
 
-        {/* Auditor shield button */}
-        <button
-          style={{ ...iconBtn, position: 'relative' }}
-          title="Accountability Audit"
-          onClick={onToggleAudit}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(163,113,247,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#a371f7'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#9e9e9e'; }}
-        >
-          <Shield size={13} />
-          {hasAuditData && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '4px',
-                right: '5px',
-                width: '5px',
-                height: '5px',
-                borderRadius: '50%',
-                background: '#a371f7',
-              }}
-            />
-          )}
-        </button>
-
         <button
           style={iconBtn}
           title="Notifications"
@@ -311,6 +295,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
 
         <div style={{ width: '4px' }} />
 
+        {/* Avatar */}
         <div
           style={{
             width: '22px',
@@ -326,7 +311,7 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
           }}
         >
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e', fontWeight: 600 }}>
-            T
+            E
           </span>
         </div>
       </div>

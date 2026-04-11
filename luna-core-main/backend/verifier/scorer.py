@@ -68,21 +68,20 @@ def compute_scores(
             sourceSpan=claim.sourceSpan,
         ))
 
-    # Calculate hallucination risk — contribution scales with confidence
+    # Calculate hallucination risk
     risk = 0
     for c in scored:
         if c.status == "contradicted":
-            risk += max(25, int(45 * (1 - c.confidence / 100)))
+            risk += 35
+        elif c.status == "uncertain" and c.confidence < 55:
+            risk += 15
         elif c.status == "uncertain":
-            risk += max(5, int(20 * (1 - c.confidence / 100)))
-        elif c.status == "verified":
-            risk -= min(10, int(c.confidence * 0.12))
+            risk += 5
+        elif c.status == "verified" and c.confidence > 85:
+            risk -= 5
 
-    risk = int(risk / len(scored) * 1.4)
+    risk = int(risk / len(scored) * 1.5)
     risk = max(5, min(95, risk))
-
-    # trust_initial = pre-verification baseline (conservative)
-    avg_conf = sum(c.confidence for c in scored) / len(scored)
-    trust_initial = max(35, min(75, int(avg_conf * 0.9)))
+    trust_initial = 100 - risk
 
     return scored, risk, trust_initial

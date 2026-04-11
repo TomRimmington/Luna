@@ -99,7 +99,7 @@ function PipelineStatusBar({ stage }: { stage: PipelineStage }) {
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: '8px',
-                  color: isCompleted ? '#6e6e6e' : isCurrent ? '#d29922' : '#2e2e2e',
+                  color: isCompleted ? '#b0b0b0' : isCurrent ? '#d29922' : '#5a5a5a',
                   letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
                 }}
@@ -143,7 +143,7 @@ function ReasoningPanel({ steps }: { steps: ReasoningStep[] }) {
           style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '10px',
-            color: '#5a5a5a',
+            color: '#b0b0b0',
             lineHeight: 1.6,
             margin: '0 0 4px 0',
           }}
@@ -194,12 +194,12 @@ function SectionHeader({
         onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-          <span style={{ color: '#5a5a5a', display: 'flex', alignItems: 'center' }}>{icon}</span>
+          <span style={{ color: '#9e9e9e', display: 'flex', alignItems: 'center' }}>{icon}</span>
           <span
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '10px',
-              color: '#6e6e6e',
+              color: '#cccccc',
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
             }}
@@ -215,7 +215,7 @@ function SectionHeader({
                 padding: '1px 6px',
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '10px',
-                color: '#6e6e6e',
+                color: '#b0b0b0',
               }}
             >
               {count}
@@ -227,23 +227,23 @@ function SectionHeader({
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '9px',
-                color: '#4a4a4a',
+                color: '#8a8a8a',
                 cursor: 'pointer',
                 padding: '1px 5px',
                 borderRadius: '3px',
                 transition: 'color 0.1s',
               }}
-              onMouseEnter={e => ((e.currentTarget as HTMLSpanElement).style.color = '#8a8a8a')}
-              onMouseLeave={e => ((e.currentTarget as HTMLSpanElement).style.color = '#4a4a4a')}
+              onMouseEnter={e => ((e.currentTarget as HTMLSpanElement).style.color = '#cccccc')}
+              onMouseLeave={e => ((e.currentTarget as HTMLSpanElement).style.color = '#8a8a8a')}
             >
               {showReasoning ? '▾' : '▸'} reasoning
             </span>
           )}
         </div>
         {expanded ? (
-          <ChevronUp size={12} style={{ color: '#4a4a4a' }} />
+          <ChevronUp size={12} style={{ color: '#9e9e9e' }} />
         ) : (
-          <ChevronDown size={12} style={{ color: '#4a4a4a' }} />
+          <ChevronDown size={12} style={{ color: '#9e9e9e' }} />
         )}
       </button>
       {showReasoning && hasReasoning && (
@@ -348,7 +348,7 @@ function ClaimCard({ claim }: { claim: Claim }) {
               }}
             />
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
             {claim.confidence}%
           </span>
         </div>
@@ -379,16 +379,16 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#8a8a8a' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#cccccc' }}>
             {evidence.source}
           </span>
-          <ExternalLink size={9} style={{ color: '#4a4a4a' }} />
+          <ExternalLink size={9} style={{ color: '#9e9e9e' }} />
         </div>
         <span
           style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '10px',
-            color: '#5a5a5a',
+            color: '#b0b0b0',
             background: 'rgba(255,255,255,0.03)',
             padding: '1px 6px',
             borderRadius: '3px',
@@ -401,7 +401,7 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
         style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '11px',
-          color: '#666666',
+          color: '#b0b0b0',
           lineHeight: 1.6,
           margin: 0,
         }}
@@ -480,7 +480,7 @@ function CriticMsg({ message }: { message: CriticMessage }) {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '9px',
-                color: '#4a4a4a',
+                color: '#8a8a8a',
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
@@ -488,13 +488,13 @@ function CriticMsg({ message }: { message: CriticMessage }) {
                 borderRadius: '3px',
                 transition: 'color 0.1s',
               }}
-              onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = '#8a8a8a')}
-              onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = '#4a4a4a')}
+              onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = '#cccccc')}
+              onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = '#8a8a8a')}
             >
               {showReasoning ? '▾' : '▸'} reasoning
             </button>
           )}
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#2e2e2e' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#7a7a7a' }}>
             {message.timestamp}
           </span>
         </div>
@@ -503,7 +503,7 @@ function CriticMsg({ message }: { message: CriticMessage }) {
         style={{
           fontFamily: 'Inter, sans-serif',
           fontSize: '11.5px',
-          color: '#6e6e6e',
+          color: '#cccccc',
           lineHeight: 1.6,
           margin: 0,
         }}
@@ -522,7 +522,7 @@ function CriticMsg({ message }: { message: CriticMessage }) {
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '10px',
-              color: '#5a5a5a',
+              color: '#9e9e9e',
               lineHeight: 1.6,
               margin: 0,
             }}
@@ -550,10 +550,10 @@ function CompressionSection({ metrics }: { metrics: CompressionMetrics }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#6e6e6e', letterSpacing: '0.05em' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#b0b0b0', letterSpacing: '0.05em' }}>
               ORIGINAL
             </span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#8a8a8a', marginLeft: '8px' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc', marginLeft: '8px' }}>
               {metrics.originalTokens.toLocaleString()} tokens
             </span>
           </div>
@@ -564,14 +564,14 @@ function CompressionSection({ metrics }: { metrics: CompressionMetrics }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#6e6e6e', letterSpacing: '0.05em' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#b0b0b0', letterSpacing: '0.05em' }}>
               COMPRESSED
             </span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#8a8a8a', marginLeft: '8px' }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc', marginLeft: '8px' }}>
               {metrics.compressedTokens.toLocaleString()} tokens
             </span>
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
             ratio: {metrics.ratio}
           </span>
         </div>
@@ -580,7 +580,7 @@ function CompressionSection({ metrics }: { metrics: CompressionMetrics }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
             Claims preserved: {metrics.preservedClaims}/{metrics.totalClaims}
           </span>
         </div>
@@ -680,7 +680,7 @@ export function RightPanel({
 
   const EmptyState = ({ text }: { text: string }) => (
     <div style={{ padding: '16px 14px', textAlign: 'center' }}>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#252525' }}>{text}</span>
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#7a7a7a' }}>{text}</span>
     </div>
   );
 
@@ -732,7 +732,7 @@ export function RightPanel({
           style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '10px',
-            color: '#6e6e6e',
+            color: '#cccccc',
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
           }}
@@ -752,8 +752,8 @@ export function RightPanel({
               padding: '2px 7px',
             }}
           >
-            <Sparkles size={9} style={{ color: '#6e6e6e' }} />
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#6e6e6e' }}>
+            <Sparkles size={9} style={{ color: '#b0b0b0' }} />
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
               Analysis Complete
             </span>
           </div>
