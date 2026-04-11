@@ -1,7 +1,7 @@
 import json
 import re
 from typing import List
-from config import openai_client, GPT4O
+from config import client, DEFAULT_JUDGE, get_cost_per_1k
 from models import Claim, Evidence, CriticMessage
 
 CRITIC_PROMPT = """You are a skeptical fact-checker reviewing TWO AI responses to the same question.
@@ -21,8 +21,9 @@ async def run_critic(
     combined_output: str,
     claims: List[Claim],
     evidence: List[Evidence],
+    judge_model: str = DEFAULT_JUDGE,
 ) -> tuple:
-    """GPT-4o secretly critiques both Model A and Model B answers"""
+    """Judge model critiques both Model A and Model B answers"""
 
     claims_summary = "\n".join([
         f"- [{c.status.upper()} | {c.confidence}%] {c.text}"
@@ -41,8 +42,8 @@ async def run_critic(
         timestamp="00:00.12",
     )
 
-    response = await openai_client.chat.completions.create(
-        model=GPT4O,
+    response = await client.chat.completions.create(
+        model=judge_model,
         max_tokens=500,
         temperature=0.3,
         messages=[
@@ -60,7 +61,7 @@ async def run_critic(
 
     raw_text = response.choices[0].message.content or "{}"
     tokens = response.usage.total_tokens if response.usage else 300
-    cost = (tokens / 1000) * 0.005
+    cost = (tokens / 1000) * get_cost_per_1k(judge_model)
 
     try:
         cleaned = re.sub(r'^```json?\s*\n?', '', raw_text.strip())
@@ -72,12 +73,8 @@ async def run_critic(
         critique_text = raw_text
         critic_reasoning = ""
 
-    # ── Safe type conversion — handles any GPT-4o response format ──
     if isinstance(critique_text, dict):
-        critique_text = critique_text.get(
-            "critique",
-            str(critique_text)
-        )
+        critique_text = critique_text.get("critique", str(critique_text))
     elif not isinstance(critique_text, str):
         critique_text = str(critique_text)
 
@@ -108,7 +105,7 @@ async def run_critic(
     )
 
     reasoning = (
-        f"Secret judge ({GPT4O}) cross-referenced {len(claims)} claims "
+        f"Judge ({judge_model}) cross-referenced {len(claims)} claims "
         f"from both Model A and B against {len(evidence)} evidence sources. "
         f"Found {sum(1 for c in claims if c.status == 'contradicted')} "
         f"contradicted, "

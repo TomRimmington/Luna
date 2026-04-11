@@ -4,8 +4,9 @@ from typing import Optional, List, Literal
 class RunRequest(BaseModel):
     model_config = {"protected_namespaces": ()}
     prompt: str = Field(..., min_length=1, max_length=4000)
-    model_a: str = "claude-sonnet-4-6"
-    model_b: str = "llama-3.3-70b-versatile"
+    model_a: str = "anthropic/claude-sonnet-4.6"
+    model_b: str = "meta-llama/llama-3.3-70b-instruct"
+    judge_model: str = "openai/gpt-4o"
 
 class SourceSpan(BaseModel):
     start: int

@@ -1,10 +1,14 @@
 import type { Model, RunResult } from './types';
 
 export const MODELS: Model[] = [
-  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4', provider: 'Anthropic', latency: 190, costPer1k: 0.003 },
-  { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', provider: 'Anthropic', latency: 95, costPer1k: 0.0008 },
-  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B', provider: 'Meta', latency: 80, costPer1k: 0.0 },
-  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B', provider: 'Meta', latency: 45, costPer1k: 0.0 },
+  { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', provider: 'Anthropic', costPer1k: 0.003 },
+  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'Anthropic', costPer1k: 0.003 },
+  { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', provider: 'Anthropic', costPer1k: 0.001 },
+  { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'OpenAI', costPer1k: 0.005 },
+  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', costPer1k: 0.0003 },
+  { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B', provider: 'Meta', costPer1k: 0.0 },
+  { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B', provider: 'Meta', costPer1k: 0.0 },
+  { id: 'google/gemini-2.0-flash-001', name: 'Gemini 2.0 Flash', provider: 'Google', costPer1k: 0.0001 },
 ];
 
 const RAW_OUTPUT = `Quantum computing leverages quantum mechanical phenomena—superposition and entanglement—to process information fundamentally differently than classical computers.

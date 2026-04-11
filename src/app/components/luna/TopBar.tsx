@@ -12,14 +12,18 @@ import {
   Shield,
 } from 'lucide-react';
 
+export type PanelLayout = 'split' | 'left' | 'right';
+
 interface TopBarProps {
   onSearch?: (query: string) => void;
   showAuditor?: boolean;
   onToggleAudit?: () => void;
   hasAuditData?: boolean;
+  panelLayout?: PanelLayout;
+  onLayoutChange?: (layout: PanelLayout) => void;
 }
 
-export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
+export function TopBar({ onSearch, onToggleAudit, hasAuditData, panelLayout = 'split', onLayoutChange }: TopBarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -232,6 +236,58 @@ export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
             </span>
           </button>
         )}
+      </div>
+
+      {/* Panel layout toggle — right of search bar */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 'calc(50% + 190px)',
+          display: 'flex',
+          alignItems: 'center',
+          background: '#222',
+          border: '1px solid #333',
+          borderRadius: '5px',
+          height: '24px',
+          overflow: 'hidden',
+        }}
+      >
+        {([['left', 'Output'], ['right', 'Engine']] as [PanelLayout, string][]).map(([layout, label], i) => {
+          const active = panelLayout === layout;
+          return (
+            <button
+              key={layout}
+              onClick={() => onLayoutChange?.(active ? 'split' : layout)}
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10px',
+                letterSpacing: '0.03em',
+                color: active ? '#cccccc' : '#666',
+                background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: 'none',
+                padding: '0 10px',
+                height: '100%',
+                cursor: 'pointer',
+                transition: 'all 0.12s',
+                borderRight: i === 0 ? '1px solid #333' : 'none',
+              }}
+              onMouseEnter={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLButtonElement).style.color = '#aaa';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLButtonElement).style.color = '#666';
+                  (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                }
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* RIGHT — action icons */}

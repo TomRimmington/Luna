@@ -1,15 +1,11 @@
 // ── Model Selection ──────────────────────────────────────────────
-export type ModelId =
-  | 'claude-sonnet-4-6'
-  | 'claude-haiku-4-5-20251001'
-  | 'llama-3.3-70b-versatile'
-  | 'llama-3.1-8b-instant';
+// OpenRouter model IDs — provider/model-name format
+export type ModelId = string;
 
 export interface Model {
   id: ModelId;
   name: string;
-  provider: 'Anthropic' | 'Meta';
-  latency: number;
+  provider: string;
   costPer1k: number;
 }
 

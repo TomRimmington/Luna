@@ -13,17 +13,18 @@ from agents.compressor import compress_context
 from agents.auditor import run_auditor
 from verifier.search import verify_claims
 from verifier.scorer import compute_scores
-from config import JUDGE_MODEL
+from config import DEFAULT_JUDGE
 
 
 async def run_pipeline(
     prompt: str,
     model_a: str,
     model_b: str,
+    judge_model: str = DEFAULT_JUDGE,
 ) -> RunResult:
     """
     Runs 2 user-selected models in parallel.
-    Secret 3rd model (GPT-4o) judges both answers.
+    A user-selected judge model evaluates both answers.
     """
     total_cost = 0.0
     reasoning_trace = []
@@ -51,14 +52,16 @@ async def run_pipeline(
         timestamp=elapsed(), status="complete",
     ))
 
-    # Step 2: Combine both answers for secret judge 
+    # Step 2: Combine both answers for judge
     combined_output = (
         f"=== Model A ({model_a}) answer ===\n{output_a}\n\n"
         f"=== Model B ({model_b}) answer ===\n{output_b}"
     )
 
     # Step 3: Extract claims from BOTH answers
-    claims, extract_cost, extract_reasoning = await extract_claims(combined_output)
+    claims, extract_cost, extract_reasoning = await extract_claims(
+        combined_output, judge_model=judge_model
+    )
     total_cost += extract_cost
     reasoning_trace.append(ReasoningStep(
         id="r2", agent="extractor",
@@ -67,7 +70,7 @@ async def run_pipeline(
         timestamp=elapsed(), status="complete",
     ))
 
-    # Step 4: Verify with Wikipedia 
+    # Step 4: Verify with Wikipedia
     evidence, verify_cost, verify_reasoning = await verify_claims(claims)
     total_cost += verify_cost
     reasoning_trace.append(ReasoningStep(
@@ -77,26 +80,26 @@ async def run_pipeline(
         timestamp=elapsed(), status="complete",
     ))
 
-    # Step 5: Score claims 
+    # Step 5: Score claims
     scored_claims, hallucination_risk, trust_initial = compute_scores(
         claims, evidence
     )
 
-    # Step 6: Secret judge (GPT-4o) critiques both
+    # Step 6: Judge critiques both
     critic_feed, critic_cost, critic_reasoning = await run_critic(
-        combined_output, scored_claims, evidence
+        combined_output, scored_claims, evidence, judge_model=judge_model
     )
     total_cost += critic_cost
     reasoning_trace.append(ReasoningStep(
         id="r4", agent="critic",
-        action=f"Secret judge ({JUDGE_MODEL}) evaluated both answers",
+        action=f"Judge ({judge_model}) evaluated both answers",
         detail=critic_reasoning,
         timestamp=elapsed(), status="complete",
     ))
 
-    # Step 7: Judge rules 
+    # Step 7: Judge rules
     ruling, judge_cost, judge_reasoning = await run_judge(
-        critic_feed, scored_claims
+        critic_feed, scored_claims, judge_model=judge_model
     )
     total_cost += judge_cost
     reasoning_trace.append(ReasoningStep(
@@ -109,7 +112,7 @@ async def run_pipeline(
     if "judge_message" in ruling:
         critic_feed.append(ruling["judge_message"])
 
-    # Step 8: Correction if needed 
+    # Step 8: Correction if needed
     revised_output = output_a
     if ruling.get("needs_correction", False):
         revised_output, rev_cost, _ = await generate_response(
@@ -120,7 +123,7 @@ async def run_pipeline(
         )
         total_cost += rev_cost
 
-    # Step 9: Compress 
+    # Step 9: Compress
     compression, comp_reasoning = compress_context(
         combined_output, scored_claims, evidence, critic_feed
     )
@@ -131,9 +134,9 @@ async def run_pipeline(
         timestamp=elapsed(), status="complete",
     ))
 
-    # Step 10: Audit 
+    # Step 10: Audit
     audit_findings, auditor_msg, audit_cost, audit_reasoning = await run_auditor(
-        scored_claims, evidence, critic_feed, ruling,
+        scored_claims, evidence, critic_feed, ruling, judge_model=judge_model,
     )
     total_cost += audit_cost
     critic_feed.append(auditor_msg)
@@ -153,7 +156,7 @@ async def run_pipeline(
         rawOutputB=output_b,
         modelA=model_a,
         modelB=model_b,
-        judgeModel=JUDGE_MODEL,
+        judgeModel=judge_model,
         trust=TrustAnalysis(
             claims=scored_claims,
             evidence=evidence,
@@ -169,6 +172,7 @@ async def run_pipeline(
         latency=0,
         cost=round(total_cost, 6),
     )
+
 def compute_final_trust(claims: list, was_corrected: bool) -> int:
     if not claims:
         return 65
@@ -189,5 +193,3 @@ def compute_final_trust(claims: list, was_corrected: bool) -> int:
         base = min(98, base + 12)
 
     return max(40, min(95, base))
-
-    

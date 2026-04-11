@@ -9,7 +9,7 @@ load_dotenv()
 from models import RunRequest, RunResult
 from orchestrator import run_pipeline
 
-app = FastAPI(title="LUNA Trust Engine", version="0.5.0")
+app = FastAPI(title="LUNA Trust Engine", version="0.6.0")
 
 # ── CORS — allows frontend to talk to backend ───────────────────────
 app.add_middleware(
@@ -27,10 +27,12 @@ app.add_middleware(
 # ── Health check ────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
+    from config import MODELS
     return {
         "status": "ok",
-        "version": "0.5.0",
-        "models": ["anthropic:claude-sonnet-4-6", "groq:llama-3.1-70b"]
+        "version": "0.6.0",
+        "provider": "openrouter",
+        "models": list(MODELS.keys()),
     }
 
 # ── Main run endpoint ───────────────────────────────────────────────
@@ -42,6 +44,7 @@ async def run(request: RunRequest):
             prompt=request.prompt,
             model_a=request.model_a,
             model_b=request.model_b,
+            judge_model=request.judge_model,
         )
         result.latency = int((time.time() - start) * 1000)
         return result

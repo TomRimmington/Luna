@@ -492,7 +492,7 @@ export function LeftPanel({
                 borderRadius: '6px',
                 overflow: 'hidden',
                 zIndex: 100,
-                minWidth: '240px',
+                minWidth: '280px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
               }}
             >
@@ -530,7 +530,7 @@ export function LeftPanel({
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#b0b0b0' }}>
-                      {model.latency}ms
+                      {model.provider}
                     </span>
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>
                       ${model.costPer1k}/1k

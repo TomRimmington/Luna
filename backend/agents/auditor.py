@@ -1,13 +1,13 @@
 import json
 import re
 from typing import List
-from config import openai_client, GPT4O
+from config import client, DEFAULT_JUDGE, get_cost_per_1k
 from models import Claim, Evidence, CriticMessage, AuditFinding
 
 AUDITOR_PROMPT = """You are an accountability auditor reviewing a multi-model AI verification pipeline.
 
 Two AI models (Model A and Model B) answered a question independently.
-A secret third model (you) verified both answers.
+A separate judge model verified both answers.
 
 Now audit the entire process:
 1. CRITIC: Was the critique fair to both models?
@@ -34,8 +34,9 @@ async def run_auditor(
     evidence: List[Evidence],
     critic_feed: List[CriticMessage],
     ruling: dict,
+    judge_model: str = DEFAULT_JUDGE,
 ) -> tuple:
-    """GPT-4o audits the entire pipeline — watches the watchers"""
+    """Audits the entire pipeline — watches the watchers"""
 
     claims_summary = "\n".join([
         f"- [{c.status} | {c.confidence}%] {c.text}"
@@ -55,8 +56,8 @@ async def run_auditor(
 
     judge_summary = f"Correction needed: {ruling.get('needs_correction', False)}"
 
-    response = await openai_client.chat.completions.create(
-        model=GPT4O,
+    response = await client.chat.completions.create(
+        model=judge_model,
         max_tokens=400,
         temperature=0.3,
         messages=[
@@ -75,7 +76,7 @@ async def run_auditor(
 
     raw = response.choices[0].message.content or "{}"
     tokens = response.usage.total_tokens if response.usage else 200
-    cost = (tokens / 1000) * 0.005
+    cost = (tokens / 1000) * get_cost_per_1k(judge_model)
 
     try:
         cleaned = re.sub(r'^```json?\s*\n?', '', raw.strip())
@@ -110,7 +111,7 @@ async def run_auditor(
     )
 
     reasoning = (
-        f"Secret judge ({GPT4O}) audited entire pipeline. "
+        f"Auditor ({judge_model}) audited entire pipeline. "
         f"{len(claims)} claims reviewed, "
         f"{len(evidence)} evidence items checked. "
         f"Found {sum(1 for f in findings if f.severity == 'warning')} warnings."

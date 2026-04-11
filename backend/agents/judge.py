@@ -1,7 +1,7 @@
 import json
 import re
 from typing import List, Optional
-from config import openai_client, GPT4O
+from config import client, DEFAULT_JUDGE, get_cost_per_1k
 from models import Claim, CriticMessage
 
 JUDGE_PROMPT = """You are an impartial judge reviewing a fact-checking analysis of TWO AI models.
@@ -20,8 +20,9 @@ Respond in JSON only:
 async def run_judge(
     critic_feed: List[CriticMessage],
     claims: Optional[List[Claim]] = None,
+    judge_model: str = DEFAULT_JUDGE,
 ) -> tuple:
-    """GPT-4o judges both models and decides if correction needed"""
+    """Judge model decides if correction is needed"""
 
     critic_content = "\n".join([
         f"[{msg.role.upper()}]: {msg.content}"
@@ -40,8 +41,8 @@ async def run_judge(
             f"{[c.text for c in uncertain_low]}"
         )
 
-    response = await openai_client.chat.completions.create(
-        model=GPT4O,
+    response = await client.chat.completions.create(
+        model=judge_model,
         max_tokens=300,
         temperature=0.2,
         messages=[
@@ -58,7 +59,7 @@ async def run_judge(
 
     raw = response.choices[0].message.content or "{}"
     tokens = response.usage.total_tokens if response.usage else 200
-    cost = (tokens / 1000) * 0.005
+    cost = (tokens / 1000) * get_cost_per_1k(judge_model)
 
     try:
         cleaned = re.sub(r'^```json?\s*\n?', '', raw.strip())
@@ -83,7 +84,7 @@ async def run_judge(
     )
 
     reasoning = (
-        f"Secret judge ({GPT4O}) assessed both models' outputs. "
+        f"Judge ({judge_model}) assessed both models' outputs. "
         f"Correction {'required' if ruling.get('needs_correction') else 'not required'}."
     )
 

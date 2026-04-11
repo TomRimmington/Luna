@@ -6,6 +6,8 @@ import { MODELS } from './mockData';
 interface PromptBarProps {
   selectedModel: Model;
   onModelChange: (model: Model) => void;
+  judgeModel: Model;
+  onJudgeChange: (model: Model) => void;
   onRun: (prompt: string) => void;
   isRunning: boolean;
   stage?: PipelineStage;
@@ -22,17 +24,22 @@ const stageLabels: Partial<Record<PipelineStage, string>> = {
   auditing: 'AUDITING...',
 };
 
-export function PromptBar({ selectedModel, onModelChange, onRun, isRunning, stage = 'idle' }: PromptBarProps) {
+export function PromptBar({ selectedModel, onModelChange, judgeModel, onJudgeChange, onRun, isRunning, stage = 'idle' }: PromptBarProps) {
   const [prompt, setPrompt] = useState('');
   const [focused, setFocused] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [judgeDropdownOpen, setJudgeDropdownOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const judgeDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setModelDropdownOpen(false);
+      }
+      if (judgeDropdownRef.current && !judgeDropdownRef.current.contains(e.target as Node)) {
+        setJudgeDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -189,7 +196,7 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning, stag
                     borderRadius: '7px',
                     overflow: 'hidden',
                     zIndex: 200,
-                    minWidth: '200px',
+                    minWidth: '280px',
                     boxShadow: '0 -8px 32px rgba(0,0,0,0.6)',
                   }}
                 >
@@ -224,7 +231,95 @@ export function PromptBar({ selectedModel, onModelChange, onRun, isRunning, stag
                         {model.name}
                       </span>
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>
-                        {model.latency}ms
+                        {model.provider}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Judge / Trust Engine model selector */}
+            <div ref={judgeDropdownRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setJudgeDropdownOpen(!judgeDropdownOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#111111',
+                  border: '1px solid #272727',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  height: '28px',
+                  transition: 'border-color 0.12s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.borderColor = '#3a3a3a')}
+                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.borderColor = '#272727')}
+              >
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#d29922', letterSpacing: '0.04em' }}>
+                  JUDGE
+                </span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#9e9e9e' }}>
+                  {judgeModel.name}
+                </span>
+                <ChevronDown size={10} style={{ color: '#9e9e9e' }} />
+              </button>
+
+              {judgeDropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 6px)',
+                    left: 0,
+                    background: '#1e1e1e',
+                    border: '1px solid #2e2e2e',
+                    borderRadius: '7px',
+                    overflow: 'hidden',
+                    zIndex: 200,
+                    minWidth: '280px',
+                    boxShadow: '0 -8px 32px rgba(0,0,0,0.6)',
+                  }}
+                >
+                  <div style={{ padding: '6px 10px', borderBottom: '1px solid #252525' }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#d29922', letterSpacing: '0.06em' }}>
+                      TRUST ENGINE MODEL
+                    </span>
+                  </div>
+                  {MODELS.map(model => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        onJudgeChange(model);
+                        setJudgeDropdownOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '7px 10px',
+                        background: model.id === judgeModel.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={e => {
+                        if (model.id !== judgeModel.id)
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+                      }}
+                      onMouseLeave={e => {
+                        if (model.id !== judgeModel.id)
+                          (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#cccccc' }}>
+                        {model.name}
+                      </span>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e' }}>
+                        {model.provider}
                       </span>
                     </button>
                   ))}

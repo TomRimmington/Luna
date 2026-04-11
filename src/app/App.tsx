@@ -8,7 +8,6 @@ import { AuditDrawer } from './components/luna/AuditDrawer';
 import { MODELS, MOCK_RESULT } from './components/luna/mockData';
 import type {
   Model,
-  ModelId,
   RunResult,
   PipelineStage,
   Claim,
@@ -19,15 +18,16 @@ import type {
   AuditFinding,
 } from './components/luna/types';
 
-const COMPLEMENTARY_MODEL: Record<ModelId, ModelId> = {
-  'claude-sonnet-4-6': 'llama-3.3-70b-versatile',
-  'claude-haiku-4-5-20251001': 'llama-3.3-70b-versatile',
-  'llama-3.3-70b-versatile': 'claude-sonnet-4-6',
-  'llama-3.1-8b-instant': 'claude-sonnet-4-6',
-};
+function pickComplement(selected: Model): Model {
+  const otherProvider = MODELS.find(m => m.provider !== selected.provider);
+  return otherProvider ?? MODELS[0];
+}
 
 export default function App() {
   const [selectedModel, setSelectedModel] = useState<Model>(MODELS[0]);
+  const [judgeModel, setJudgeModel] = useState<Model>(
+    MODELS.find(m => m.id === 'openai/gpt-4o') ?? MODELS[0]
+  );
   const [result, setResult] = useState<RunResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -43,6 +43,7 @@ export default function App() {
   const [compression, setCompression] = useState<CompressionMetrics | null>(null);
   const [audit, setAudit] = useState<AuditFinding[]>([]);
   const [showAuditor, setShowAuditor] = useState(false);
+  const [panelLayout, setPanelLayout] = useState<'split' | 'left' | 'right'>('split');
 
   const playbackRef = useRef(false);
 
@@ -71,11 +72,12 @@ export default function App() {
 
     try {
       const modelA = selectedModel.id;
-      const modelB = COMPLEMENTARY_MODEL[modelA];
+      const modelB = pickComplement(selectedModel).id;
       const response = await axios.post('http://localhost:8000/run', {
         prompt,
         model_a: modelA,
         model_b: modelB,
+        judge_model: judgeModel.id,
       }, { timeout: 90000 });
 
       const data = response.data;
@@ -120,7 +122,7 @@ export default function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, selectedModel, resetStreamState]);
+  }, [isRunning, selectedModel, judgeModel, resetStreamState]);
 
   const loadMockInstant = useCallback(() => {
     setIsRunning(false);
@@ -287,6 +289,8 @@ export default function App() {
         showAuditor={showAuditor}
         onToggleAudit={() => setShowAuditor(prev => !prev)}
         hasAuditData={(audit.length > 0) || (result?.trust.audit && result.trust.audit.length > 0)}
+        panelLayout={panelLayout}
+        onLayoutChange={setPanelLayout}
       />
 
       {error && (
@@ -317,13 +321,13 @@ export default function App() {
         {/* Left Panel — Model Output */}
         <div
           style={{
-            flex: 1,
+            flex: panelLayout === 'left' ? 1 : panelLayout === 'right' ? 0 : 1,
             minWidth: 0,
-            borderRight: '1px solid #1e1e1e',
             overflow: 'hidden',
-            display: 'flex',
+            display: panelLayout === 'right' ? 'none' : 'flex',
             flexDirection: 'column',
             background: '#181818',
+            transition: 'flex 0.25s ease',
           }}
         >
           <LeftPanel
@@ -338,15 +342,20 @@ export default function App() {
           />
         </div>
 
+        {panelLayout === 'split' && (
+          <div style={{ width: '1px', flexShrink: 0, background: '#1e1e1e' }} />
+        )}
+
         {/* Right Panel — Trust Engine */}
         <div
           style={{
-            flex: 1,
+            flex: panelLayout === 'right' ? 1 : panelLayout === 'left' ? 0 : 1,
             minWidth: 0,
             overflow: 'hidden',
-            display: 'flex',
+            display: panelLayout === 'left' ? 'none' : 'flex',
             flexDirection: 'column',
             background: '#181818',
+            transition: 'flex 0.25s ease',
           }}
         >
           <RightPanel
@@ -374,6 +383,8 @@ export default function App() {
       <PromptBar
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
+        judgeModel={judgeModel}
+        onJudgeChange={setJudgeModel}
         onRun={handleRun}
         isRunning={isRunning}
         stage={stage}

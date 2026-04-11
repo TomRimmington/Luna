@@ -1,7 +1,7 @@
 import json
 import re
 from typing import Optional
-from config import openai_client, GPT4O
+from config import client, DEFAULT_JUDGE, get_cost_per_1k
 from models import Claim, SourceSpan
 
 EXTRACTION_PROMPT = """Extract all verifiable factual claims from the text below.
@@ -26,9 +26,9 @@ def find_source_span(claim_text: str, raw_output: str) -> Optional[SourceSpan]:
     return None
 
 
-async def extract_claims(raw_output: str) -> tuple:
-    response = await openai_client.chat.completions.create(
-        model=GPT4O,
+async def extract_claims(raw_output: str, judge_model: str = DEFAULT_JUDGE) -> tuple:
+    response = await client.chat.completions.create(
+        model=judge_model,
         max_tokens=800,
         temperature=0.1,
         messages=[
@@ -41,7 +41,7 @@ async def extract_claims(raw_output: str) -> tuple:
 
     raw = response.choices[0].message.content or "[]"
     tokens = response.usage.total_tokens if response.usage else 300
-    cost = (tokens / 1000) * 0.005
+    cost = (tokens / 1000) * get_cost_per_1k(judge_model)
 
     try:
         cleaned = re.sub(r'^```json?\s*\n?', '', raw.strip())
@@ -68,8 +68,8 @@ async def extract_claims(raw_output: str) -> tuple:
         ))
 
     reasoning = (
-        f"Extracted {len(claims)} claims from combined output. "
-        f"Using {GPT4O} as secret judge."
+        f"Extracted {len(claims)} claims from combined output "
+        f"using {judge_model}."
     )
 
     return claims, cost, reasoning

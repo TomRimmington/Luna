@@ -1,8 +1,5 @@
 from typing import Optional
-from config import (
-    anthropic_client, groq_client,
-    CLAUDE_SONNET, MODEL_COSTS
-)
+from config import client, DEFAULT_GENERATOR, get_cost_per_1k
 
 SYSTEM_PROMPT = """You are a knowledgeable assistant. Respond with a comprehensive, factual answer.
 
@@ -20,7 +17,7 @@ Keep accurate content unchanged. Do not lengthen the response."""
 
 async def generate_response(
     prompt: str,
-    model_name: str = CLAUDE_SONNET,
+    model_name: str = DEFAULT_GENERATOR,
     correction_signal: Optional[str] = None,
     original_output: Optional[str] = None,
 ) -> tuple:
@@ -40,34 +37,19 @@ async def generate_response(
 
     reasoning = f"Generating with {model_name}."
 
-    # Claude — Anthropic SDK
-    if "claude" in model_name.lower():
-        response = await anthropic_client.messages.create(
-            model=model_name,
-            max_tokens=600,
-            system=system,
-            messages=[
-                {"role": "user", "content": user_content}
-            ],
-        )
-        text = response.content[0].text if response.content else ""
-        tokens = response.usage.input_tokens + response.usage.output_tokens
-        cost = (tokens / 1000) * MODEL_COSTS.get(model_name, 0.003)
+    response = await client.chat.completions.create(
+        model=model_name,
+        max_tokens=600,
+        temperature=0.3,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_content},
+        ],
+    )
 
-    # Groq Llama — OpenAI compatible SDK (no errors!)
-    else:
-        response = await groq_client.chat.completions.create(
-            model=model_name,
-            max_tokens=600,
-            temperature=0.3,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_content},
-            ],
-        )
-        text = response.choices[0].message.content or ""
-        tokens = response.usage.total_tokens if response.usage else 500
-        cost = 0.0
+    text = response.choices[0].message.content or ""
+    tokens = response.usage.total_tokens if response.usage else 500
+    cost = (tokens / 1000) * get_cost_per_1k(model_name)
 
     reasoning += f" Generated {len(text.split())} words."
     return text, cost, reasoning
