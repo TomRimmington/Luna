@@ -10,83 +10,252 @@ import {
   Cpu,
   Scale,
   Sparkles,
+  Shield,
+  Archive,
 } from 'lucide-react';
-import type { RunResult, Claim, Evidence, CriticMessage } from './types';
+import type {
+  RunResult,
+  Claim,
+  Evidence,
+  CriticMessage,
+  ReasoningStep,
+  PipelineStage,
+  CompressionMetrics,
+} from './types';
 
 interface RightPanelProps {
   result: RunResult | null;
   isRunning: boolean;
+  stage?: PipelineStage;
+  streamedClaims?: Claim[];
+  streamedEvidence?: Evidence[];
+  streamedCritic?: CriticMessage[];
+  streamedRevised?: string;
+  reasoningTrace?: ReasoningStep[];
+  compression?: CompressionMetrics | null;
 }
 
+// ── Pipeline Status Bar ─────────────────────────────────────────
+const PIPELINE_STAGES: { key: PipelineStage; label: string }[] = [
+  { key: 'generating', label: 'GEN' },
+  { key: 'extracting', label: 'EXTRACT' },
+  { key: 'verifying', label: 'VERIFY' },
+  { key: 'critiquing', label: 'CRITIQUE' },
+  { key: 'judging', label: 'JUDGE' },
+  { key: 'correcting', label: 'CORRECT' },
+  { key: 'compressing', label: 'COMPRESS' },
+  { key: 'auditing', label: 'AUDIT' },
+];
+
+function PipelineStatusBar({ stage }: { stage: PipelineStage }) {
+  if (stage === 'idle') return null;
+
+  const stageKeys = PIPELINE_STAGES.map(s => s.key);
+  const currentIdx = stageKeys.indexOf(stage);
+  const isComplete = stage === 'complete';
+
+  return (
+    <div
+      style={{
+        padding: '8px 14px',
+        borderBottom: '1px solid #222',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0',
+        flexShrink: 0,
+        overflowX: 'auto',
+      }}
+    >
+      {PIPELINE_STAGES.map((s, i) => {
+        const isCompleted = isComplete || i < currentIdx;
+        const isCurrent = !isComplete && i === currentIdx;
+        const isFuture = !isComplete && i > currentIdx;
+
+        return (
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center' }}>
+            {i > 0 && (
+              <div
+                style={{
+                  width: '12px',
+                  height: '1px',
+                  background: isCompleted ? '#3a3a3a' : '#1e1e1e',
+                  borderStyle: isFuture ? 'dashed' : 'solid',
+                }}
+              />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: isCompleted ? '#8a8a8a' : isCurrent ? '#d29922' : 'transparent',
+                  border: isFuture ? '1px solid #333' : 'none',
+                  animation: isCurrent ? 'pulse 1s ease-in-out infinite' : 'none',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '8px',
+                  color: isCompleted ? '#6e6e6e' : isCurrent ? '#d29922' : '#2e2e2e',
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {s.label}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Reasoning Inline Panel ──────────────────────────────────────
+function ReasoningPanel({ steps }: { steps: ReasoningStep[] }) {
+  if (steps.length === 0) return null;
+
+  const agentColors: Record<string, string> = {
+    extractor: '#8a8a8a',
+    verifier: '#8a8a8a',
+    critic: '#d29922',
+    judge: '#cccccc',
+    compressor: '#6e6e6e',
+    auditor: '#a371f7',
+  };
+
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.02)',
+        borderLeft: `2px solid ${agentColors[steps[0]?.agent] || '#333'}`,
+        padding: '6px 10px',
+        marginBottom: '6px',
+        borderRadius: '0 3px 3px 0',
+      }}
+    >
+      {steps.map(step => (
+        <p
+          key={step.id}
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '10px',
+            color: '#5a5a5a',
+            lineHeight: 1.6,
+            margin: '0 0 4px 0',
+          }}
+        >
+          {step.detail}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ── Section Header ──────────────────────────────────────────────
 function SectionHeader({
   title,
   icon,
   count,
   expanded,
   onToggle,
+  reasoningSteps,
 }: {
   title: string;
   icon: React.ReactNode;
   count?: number;
   expanded: boolean;
   onToggle: () => void;
+  reasoningSteps?: ReasoningStep[];
 }) {
+  const [showReasoning, setShowReasoning] = useState(false);
+  const hasReasoning = reasoningSteps && reasoningSteps.length > 0;
+
   return (
-    <button
-      onClick={onToggle}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: '9px 14px',
-        background: 'transparent',
-        border: 'none',
-        borderBottom: '1px solid #222',
-        cursor: 'pointer',
-        transition: 'background 0.1s',
-      }}
-      onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.02)')}
-      onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-        <span style={{ color: '#5a5a5a', display: 'flex', alignItems: 'center' }}>{icon}</span>
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '10px',
-            color: '#6e6e6e',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {title}
-        </span>
-        {count !== undefined && (
+    <div>
+      <button
+        onClick={onToggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '9px 14px',
+          background: 'transparent',
+          border: 'none',
+          borderBottom: '1px solid #222',
+          cursor: 'pointer',
+          transition: 'background 0.1s',
+        }}
+        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.02)')}
+        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+          <span style={{ color: '#5a5a5a', display: 'flex', alignItems: 'center' }}>{icon}</span>
           <span
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid #2e2e2e',
-              borderRadius: '8px',
-              padding: '1px 6px',
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '10px',
               color: '#6e6e6e',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
             }}
           >
-            {count}
+            {title}
           </span>
+          {count !== undefined && (
+            <span
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid #2e2e2e',
+                borderRadius: '8px',
+                padding: '1px 6px',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10px',
+                color: '#6e6e6e',
+              }}
+            >
+              {count}
+            </span>
+          )}
+          {hasReasoning && (
+            <span
+              onClick={e => { e.stopPropagation(); setShowReasoning(!showReasoning); }}
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '9px',
+                color: '#4a4a4a',
+                cursor: 'pointer',
+                padding: '1px 5px',
+                borderRadius: '3px',
+                transition: 'color 0.1s',
+              }}
+              onMouseEnter={e => ((e.currentTarget as HTMLSpanElement).style.color = '#8a8a8a')}
+              onMouseLeave={e => ((e.currentTarget as HTMLSpanElement).style.color = '#4a4a4a')}
+            >
+              {showReasoning ? '▾' : '▸'} reasoning
+            </span>
+          )}
+        </div>
+        {expanded ? (
+          <ChevronUp size={12} style={{ color: '#4a4a4a' }} />
+        ) : (
+          <ChevronDown size={12} style={{ color: '#4a4a4a' }} />
         )}
-      </div>
-      {expanded ? (
-        <ChevronUp size={12} style={{ color: '#4a4a4a' }} />
-      ) : (
-        <ChevronDown size={12} style={{ color: '#4a4a4a' }} />
+      </button>
+      {showReasoning && hasReasoning && (
+        <div style={{ padding: '6px 14px' }}>
+          <ReasoningPanel steps={reasoningSteps!} />
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
+// ── Claim Card ──────────────────────────────────────────────────
 function ClaimCard({ claim }: { claim: Claim }) {
   const statusConfig = {
     verified: {
@@ -126,6 +295,7 @@ function ClaimCard({ claim }: { claim: Claim }) {
         borderRadius: '5px',
         padding: '9px 11px',
         transition: 'border-color 0.12s',
+        animation: 'fadeIn 0.3s ease',
       }}
       onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.borderColor = '#2e2e2e')}
       onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.borderColor = '#222')}
@@ -187,6 +357,7 @@ function ClaimCard({ claim }: { claim: Claim }) {
   );
 }
 
+// ── Evidence Card ───────────────────────────────────────────────
 function EvidenceCard({ evidence }: { evidence: Evidence }) {
   const highlighted = evidence.snippet.replace(
     evidence.highlight,
@@ -201,6 +372,7 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
         borderRadius: '5px',
         padding: '9px 11px',
         transition: 'border-color 0.12s',
+        animation: 'fadeIn 0.3s ease',
       }}
       onMouseEnter={e => ((e.currentTarget as HTMLDivElement).style.borderColor = '#2e2e2e')}
       onMouseLeave={e => ((e.currentTarget as HTMLDivElement).style.borderColor = '#222')}
@@ -239,8 +411,11 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
   );
 }
 
+// ── Critic Message ──────────────────────────────────────────────
 function CriticMsg({ message }: { message: CriticMessage }) {
-  const roleConfig = {
+  const [showReasoning, setShowReasoning] = useState(false);
+
+  const roleConfig: Record<string, { label: string; color: string; borderColor: string; bg: string; icon: React.ReactNode }> = {
     generator: {
       label: 'Generator',
       color: '#8a8a8a',
@@ -262,9 +437,16 @@ function CriticMsg({ message }: { message: CriticMessage }) {
       bg: 'rgba(255,255,255,0.04)',
       icon: <Scale size={10} />,
     },
+    auditor: {
+      label: 'Auditor',
+      color: '#a371f7',
+      borderColor: '#2d1b69',
+      bg: 'rgba(163, 113, 247, 0.05)',
+      icon: <Shield size={10} />,
+    },
   };
 
-  const cfg = roleConfig[message.role];
+  const cfg = roleConfig[message.role] || roleConfig.generator;
 
   return (
     <div
@@ -273,6 +455,7 @@ function CriticMsg({ message }: { message: CriticMessage }) {
         border: `1px solid ${cfg.borderColor}`,
         borderRadius: '5px',
         padding: '9px 11px',
+        animation: 'fadeIn 0.3s ease',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -290,9 +473,31 @@ function CriticMsg({ message }: { message: CriticMessage }) {
             {cfg.label}
           </span>
         </div>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#2e2e2e' }}>
-          {message.timestamp}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {message.reasoning && (
+            <button
+              onClick={() => setShowReasoning(!showReasoning)}
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '9px',
+                color: '#4a4a4a',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '1px 4px',
+                borderRadius: '3px',
+                transition: 'color 0.1s',
+              }}
+              onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.color = '#8a8a8a')}
+              onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.color = '#4a4a4a')}
+            >
+              {showReasoning ? '▾' : '▸'} reasoning
+            </button>
+          )}
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#2e2e2e' }}>
+            {message.timestamp}
+          </span>
+        </div>
       </div>
       <p
         style={{
@@ -305,10 +510,131 @@ function CriticMsg({ message }: { message: CriticMessage }) {
       >
         {message.content}
       </p>
+      {showReasoning && message.reasoning && (
+        <div
+          style={{
+            marginTop: '6px',
+            paddingTop: '6px',
+            borderTop: `1px solid ${cfg.borderColor}`,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '10px',
+              color: '#5a5a5a',
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            {message.reasoning}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
+// ── Compression Section ─────────────────────────────────────────
+function CompressionSection({ metrics }: { metrics: CompressionMetrics }) {
+  const compressedPct = Math.round(metrics.ratio * 100);
+  return (
+    <div style={{ padding: '9px 14px' }}>
+      <div
+        style={{
+          background: '#111111',
+          border: '1px solid #222',
+          borderRadius: '5px',
+          padding: '10px 12px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#6e6e6e', letterSpacing: '0.05em' }}>
+              ORIGINAL
+            </span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#8a8a8a', marginLeft: '8px' }}>
+              {metrics.originalTokens.toLocaleString()} tokens
+            </span>
+          </div>
+        </div>
+        <div style={{ height: '4px', background: '#1e1e1e', borderRadius: '2px', overflow: 'hidden', marginBottom: '10px' }}>
+          <div style={{ width: '100%', height: '100%', background: '#4a4a4a', borderRadius: '2px' }} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '9px', color: '#6e6e6e', letterSpacing: '0.05em' }}>
+              COMPRESSED
+            </span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#8a8a8a', marginLeft: '8px' }}>
+              {metrics.compressedTokens.toLocaleString()} tokens
+            </span>
+          </div>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a' }}>
+            ratio: {metrics.ratio}
+          </span>
+        </div>
+        <div style={{ height: '4px', background: '#1e1e1e', borderRadius: '2px', overflow: 'hidden', marginBottom: '10px' }}>
+          <div style={{ width: `${compressedPct}%`, height: '100%', background: '#3fb950', borderRadius: '2px' }} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#5a5a5a' }}>
+            Claims preserved: {metrics.preservedClaims}/{metrics.totalClaims}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Diff View ───────────────────────────────────────────────────
+function DiffView({ original, revised }: { original: string; revised: string }) {
+  const origSentences = original.split(/(?<=[.!?])\s+|\n+/).filter(Boolean);
+  const revSentences = revised.split(/(?<=[.!?])\s+|\n+/).filter(Boolean);
+
+  const origSet = new Set(origSentences.map(s => s.trim()));
+  const revSet = new Set(revSentences.map(s => s.trim()));
+
+  return (
+    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', lineHeight: 1.7 }}>
+      {revSentences.map((sentence, i) => {
+        const trimmed = sentence.trim();
+        const isNew = !origSet.has(trimmed);
+        return (
+          <span
+            key={i}
+            style={{
+              color: isNew ? '#3fb950' : '#9e9e9e',
+              background: isNew ? 'rgba(35, 134, 54, 0.08)' : 'transparent',
+              borderRadius: isNew ? '2px' : '0',
+              padding: isNew ? '0 2px' : '0',
+            }}
+          >
+            {sentence}{' '}
+          </span>
+        );
+      })}
+      {origSentences
+        .filter(s => !revSet.has(s.trim()))
+        .map((removed, i) => (
+          <span
+            key={`rm-${i}`}
+            style={{
+              color: '#f85149',
+              textDecoration: 'line-through',
+              opacity: 0.6,
+            }}
+          >
+            {removed}{' '}
+          </span>
+        ))}
+    </div>
+  );
+}
+
+// ── Skeleton Loader ─────────────────────────────────────────────
 function SkeletonLoader({ lines = 4 }: { lines?: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 14px' }}>
@@ -329,11 +655,23 @@ function SkeletonLoader({ lines = 4 }: { lines?: number }) {
   );
 }
 
-export function RightPanel({ result, isRunning }: RightPanelProps) {
+// ── Main Component ──────────────────────────────────────────────
+export function RightPanel({
+  result,
+  isRunning,
+  stage = 'idle',
+  streamedClaims = [],
+  streamedEvidence = [],
+  streamedCritic = [],
+  streamedRevised = '',
+  reasoningTrace = [],
+  compression = null,
+}: RightPanelProps) {
   const [sections, setSections] = useState({
     claims: true,
     evidence: true,
     critic: true,
+    compression: true,
     revised: true,
   });
 
@@ -345,6 +683,18 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
       <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#252525' }}>{text}</span>
     </div>
   );
+
+  const claims = result?.trust.claims ?? streamedClaims;
+  const evidence = result?.trust.evidence ?? streamedEvidence;
+  const critic = result?.trust.criticFeed ?? streamedCritic;
+  const revised = result?.trust.revisedOutput ?? streamedRevised;
+  const comp = result?.trust.compression ?? compression;
+  const trace = result?.trust.reasoningTrace ?? reasoningTrace;
+
+  const extractorSteps = trace.filter(t => t.agent === 'extractor');
+  const verifierSteps = trace.filter(t => t.agent === 'verifier');
+  const criticJudgeSteps = trace.filter(t => t.agent === 'critic' || t.agent === 'judge');
+  const compressorSteps = trace.filter(t => t.agent === 'compressor');
 
   return (
     <div
@@ -374,7 +724,8 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
             width: '5px',
             height: '5px',
             borderRadius: '50%',
-            background: '#3a3a3a',
+            background: isRunning ? '#d29922' : result ? '#8a8a8a' : '#3a3a3a',
+            animation: isRunning ? 'pulse 1s ease-in-out infinite' : 'none',
           }}
         />
         <span
@@ -409,21 +760,25 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
         )}
       </div>
 
-      {/* Claims Panel */}
+      {/* Pipeline Status Bar */}
+      <PipelineStatusBar stage={stage} />
+
+      {/* Claims */}
       <div style={{ flexShrink: 0 }}>
         <SectionHeader
           title="Claims"
           icon={<CheckCircle size={12} />}
-          count={result?.trust.claims.length}
+          count={claims.length || undefined}
           expanded={sections.claims}
           onToggle={() => toggle('claims')}
+          reasoningSteps={extractorSteps}
         />
         {sections.claims && (
           <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {isRunning ? (
+            {isRunning && claims.length === 0 ? (
               <SkeletonLoader lines={5} />
-            ) : result?.trust.claims.length ? (
-              result.trust.claims.map(claim => <ClaimCard key={claim.id} claim={claim} />)
+            ) : claims.length > 0 ? (
+              claims.map(claim => <ClaimCard key={claim.id} claim={claim} />)
             ) : (
               <EmptyState text="// no claims extracted" />
             )}
@@ -433,21 +788,22 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
 
       <div style={{ height: '1px', background: '#1a1a1a', flexShrink: 0 }} />
 
-      {/* Evidence Panel */}
+      {/* Evidence */}
       <div style={{ flexShrink: 0 }}>
         <SectionHeader
           title="Evidence"
           icon={<ExternalLink size={12} />}
-          count={result?.trust.evidence.length}
+          count={evidence.length || undefined}
           expanded={sections.evidence}
           onToggle={() => toggle('evidence')}
+          reasoningSteps={verifierSteps}
         />
         {sections.evidence && (
           <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {isRunning ? (
+            {isRunning && evidence.length === 0 ? (
               <SkeletonLoader lines={4} />
-            ) : result?.trust.evidence.length ? (
-              result.trust.evidence.map(ev => <EvidenceCard key={ev.id} evidence={ev} />)
+            ) : evidence.length > 0 ? (
+              evidence.map(ev => <EvidenceCard key={ev.id} evidence={ev} />)
             ) : (
               <EmptyState text="// no sources retrieved" />
             )}
@@ -462,16 +818,17 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
         <SectionHeader
           title="Critic Feed"
           icon={<MessageSquare size={12} />}
-          count={result?.trust.criticFeed.length}
+          count={critic.length || undefined}
           expanded={sections.critic}
           onToggle={() => toggle('critic')}
+          reasoningSteps={criticJudgeSteps}
         />
         {sections.critic && (
           <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {isRunning ? (
+            {isRunning && critic.length === 0 ? (
               <SkeletonLoader lines={6} />
-            ) : result?.trust.criticFeed.length ? (
-              result.trust.criticFeed.map(msg => <CriticMsg key={msg.id} message={msg} />)
+            ) : critic.length > 0 ? (
+              critic.map(msg => <CriticMsg key={msg.id} message={msg} />)
             ) : (
               <EmptyState text="// critic exchange pending" />
             )}
@@ -480,6 +837,23 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
       </div>
 
       <div style={{ height: '1px', background: '#1a1a1a', flexShrink: 0 }} />
+
+      {/* Context Compression */}
+      {comp && (
+        <>
+          <div style={{ flexShrink: 0 }}>
+            <SectionHeader
+              title="Context Compression"
+              icon={<Archive size={12} />}
+              expanded={sections.compression}
+              onToggle={() => toggle('compression')}
+              reasoningSteps={compressorSteps}
+            />
+            {sections.compression && <CompressionSection metrics={comp} />}
+          </div>
+          <div style={{ height: '1px', background: '#1a1a1a', flexShrink: 0 }} />
+        </>
+      )}
 
       {/* Revised Output */}
       <div style={{ flexShrink: 0 }}>
@@ -491,9 +865,9 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
         />
         {sections.revised && (
           <div style={{ padding: '9px 14px' }}>
-            {isRunning ? (
+            {isRunning && !revised ? (
               <SkeletonLoader lines={7} />
-            ) : result?.trust.revisedOutput ? (
+            ) : revised ? (
               <div
                 style={{
                   background: 'rgba(35, 134, 54, 0.04)',
@@ -515,19 +889,23 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
                     CRITIC-IMPROVED
                   </span>
                 </div>
-                <pre
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: '11px',
-                    color: '#9e9e9e',
-                    lineHeight: 1.7,
-                    margin: 0,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {result.trust.revisedOutput}
-                </pre>
+                {result?.rawOutput ? (
+                  <DiffView original={result.rawOutput} revised={revised} />
+                ) : (
+                  <pre
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '11px',
+                      color: '#9e9e9e',
+                      lineHeight: 1.7,
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {revised}
+                  </pre>
+                )}
               </div>
             ) : (
               <EmptyState text="// revised output pending" />
@@ -536,7 +914,7 @@ export function RightPanel({ result, isRunning }: RightPanelProps) {
         )}
       </div>
 
-      <div style={{ height: '80px', flexShrink: 0 }} />
+      <div style={{ height: '130px', flexShrink: 0 }} />
     </div>
   );
 }

@@ -9,13 +9,17 @@ import {
   Columns2,
   LayoutGrid,
   X,
+  Shield,
 } from 'lucide-react';
 
 interface TopBarProps {
   onSearch?: (query: string) => void;
+  showAuditor?: boolean;
+  onToggleAudit?: () => void;
+  hasAuditData?: boolean;
 }
 
-export function TopBar({ onSearch }: TopBarProps) {
+export function TopBar({ onSearch, onToggleAudit, hasAuditData }: TopBarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +56,6 @@ export function TopBar({ onSearch }: TopBarProps) {
     setSearchValue('');
   };
 
-  // Icon button style helper
   const iconBtn: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -85,7 +88,6 @@ export function TopBar({ onSearch }: TopBarProps) {
     >
       {/* LEFT — nav controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '2px', minWidth: '160px' }}>
-        {/* Hamburger / menu */}
         <button
           style={iconBtn}
           title="Toggle menu"
@@ -101,24 +103,15 @@ export function TopBar({ onSearch }: TopBarProps) {
 
         <div style={{ width: '4px' }} />
 
-        {/* Back */}
-        <button
-          style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }}
-          title="Go back"
-        >
+        <button style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }} title="Go back">
           <ChevronLeft size={15} />
         </button>
-        {/* Forward */}
-        <button
-          style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }}
-          title="Go forward"
-        >
+        <button style={{ ...iconBtn, opacity: 0.45, cursor: 'default' }} title="Go forward">
           <ChevronRight size={15} />
         </button>
 
         <div style={{ width: '6px' }} />
 
-        {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#6e6e6e' }}>
             luna
@@ -130,9 +123,10 @@ export function TopBar({ onSearch }: TopBarProps) {
             workspace
           </span>
         </div>
+
       </div>
 
-      {/* CENTER — VS Code–style title / search bar */}
+      {/* CENTER — title / search bar */}
       <div
         style={{
           position: 'absolute',
@@ -142,7 +136,6 @@ export function TopBar({ onSearch }: TopBarProps) {
         }}
       >
         {searchOpen ? (
-          /* Expanded search input */
           <div
             style={{
               display: 'flex',
@@ -190,7 +183,6 @@ export function TopBar({ onSearch }: TopBarProps) {
             </button>
           </div>
         ) : (
-          /* Title / folder pill — click to search */
           <button
             onClick={() => setSearchOpen(true)}
             style={{
@@ -275,6 +267,30 @@ export function TopBar({ onSearch }: TopBarProps) {
         <div style={{ width: '1px', height: '14px', background: '#2e2e2e' }} />
         <div style={{ width: '6px' }} />
 
+        {/* Auditor shield button */}
+        <button
+          style={{ ...iconBtn, position: 'relative' }}
+          title="Accountability Audit"
+          onClick={onToggleAudit}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(163,113,247,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#a371f7'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#9e9e9e'; }}
+        >
+          <Shield size={13} />
+          {hasAuditData && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '4px',
+                right: '5px',
+                width: '5px',
+                height: '5px',
+                borderRadius: '50%',
+                background: '#a371f7',
+              }}
+            />
+          )}
+        </button>
+
         <button
           style={iconBtn}
           title="Notifications"
@@ -295,7 +311,6 @@ export function TopBar({ onSearch }: TopBarProps) {
 
         <div style={{ width: '4px' }} />
 
-        {/* Avatar */}
         <div
           style={{
             width: '22px',
@@ -311,7 +326,7 @@ export function TopBar({ onSearch }: TopBarProps) {
           }}
         >
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#9e9e9e', fontWeight: 600 }}>
-            E
+            T
           </span>
         </div>
       </div>
