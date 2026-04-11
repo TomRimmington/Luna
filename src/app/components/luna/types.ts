@@ -1,10 +1,14 @@
 // ── Model Selection ──────────────────────────────────────────────
-export type ModelId = 'gpt-4o' | 'claude-3-5-sonnet' | 'gemini-pro' | 'llama-3-1' | 'mistral-large';
+export type ModelId =
+  | 'claude-sonnet-4-6'
+  | 'claude-haiku-4-5-20251001'
+  | 'llama-3.3-70b-versatile'
+  | 'llama-3.1-8b-instant';
 
 export interface Model {
   id: ModelId;
   name: string;
-  provider: string;
+  provider: 'Anthropic' | 'Meta';
   latency: number;
   costPer1k: number;
 }

@@ -8,6 +8,7 @@ import { AuditDrawer } from './components/luna/AuditDrawer';
 import { MODELS, MOCK_RESULT } from './components/luna/mockData';
 import type {
   Model,
+  ModelId,
   RunResult,
   PipelineStage,
   Claim,
@@ -17,6 +18,13 @@ import type {
   CompressionMetrics,
   AuditFinding,
 } from './components/luna/types';
+
+const COMPLEMENTARY_MODEL: Record<ModelId, ModelId> = {
+  'claude-sonnet-4-6': 'llama-3.3-70b-versatile',
+  'claude-haiku-4-5-20251001': 'llama-3.3-70b-versatile',
+  'llama-3.3-70b-versatile': 'claude-sonnet-4-6',
+  'llama-3.1-8b-instant': 'claude-sonnet-4-6',
+};
 
 export default function App() {
   const [selectedModel, setSelectedModel] = useState<Model>(MODELS[0]);
@@ -62,11 +70,12 @@ export default function App() {
     const startTime = Date.now();
 
     try {
-      // Backend uses dual-model architecture: model_a + model_b with a secret judge
+      const modelA = selectedModel.id;
+      const modelB = COMPLEMENTARY_MODEL[modelA];
       const response = await axios.post('http://localhost:8000/run', {
         prompt,
-        model_a: 'claude-sonnet-4-6',
-        model_b: 'llama-3.3-70b-versatile',
+        model_a: modelA,
+        model_b: modelB,
       }, { timeout: 90000 });
 
       const data = response.data;
@@ -111,7 +120,7 @@ export default function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, resetStreamState]);
+  }, [isRunning, selectedModel, resetStreamState]);
 
   const loadMockInstant = useCallback(() => {
     setIsRunning(false);

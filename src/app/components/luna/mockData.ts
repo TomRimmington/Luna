@@ -1,11 +1,10 @@
 import type { Model, RunResult } from './types';
 
 export const MODELS: Model[] = [
-  { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI', latency: 142, costPer1k: 0.005 },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', latency: 198, costPer1k: 0.003 },
-  { id: 'gemini-pro', name: 'Gemini 1.5 Pro', provider: 'Google', latency: 112, costPer1k: 0.0035 },
-  { id: 'llama-3-1', name: 'Llama 3.1 405B', provider: 'Meta', latency: 89, costPer1k: 0.0009 },
-  { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral', latency: 134, costPer1k: 0.002 },
+  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4', provider: 'Anthropic', latency: 190, costPer1k: 0.003 },
+  { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', provider: 'Anthropic', latency: 95, costPer1k: 0.0008 },
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B', provider: 'Meta', latency: 80, costPer1k: 0.0 },
+  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B', provider: 'Meta', latency: 45, costPer1k: 0.0 },
 ];
 
 const RAW_OUTPUT = `Quantum computing leverages quantum mechanical phenomena—superposition and entanglement—to process information fundamentally differently than classical computers.

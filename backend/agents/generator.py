@@ -1,7 +1,7 @@
 from typing import Optional
 from config import (
     anthropic_client, groq_client,
-    CLAUDE_SONNET, LLAMA_LARGE, MODEL_COSTS
+    CLAUDE_SONNET, MODEL_COSTS
 )
 
 SYSTEM_PROMPT = """You are a knowledgeable assistant. Respond with a comprehensive, factual answer.
@@ -57,7 +57,7 @@ async def generate_response(
     # Groq Llama — OpenAI compatible SDK (no errors!)
     else:
         response = await groq_client.chat.completions.create(
-            model=LLAMA_LARGE,
+            model=model_name,
             max_tokens=600,
             temperature=0.3,
             messages=[
