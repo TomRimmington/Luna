@@ -56,12 +56,16 @@ def extract_keywords(claim_text: str) -> str:
 
 # ── Live Web Search via DuckDuckGo ──────────────────────────────
 
-def _ddg_search_sync(query: str, max_results: int = 3) -> list[dict]:
-    """Synchronous DDG search — runs in a separate process to avoid blocking the event loop."""
+def _ddg_search_sync(query: str, max_results: int = 3, time_filter: str = 'm') -> list[dict]:
+    """
+    Synchronous DDG search with time filter.
+    time_filter: 'd', 'w', 'm', 'y' or None for no filter.
+    """
     try:
         from ddgs import DDGS
         with DDGS() as ddgs:
-            return list(ddgs.text(query, max_results=max_results))
+            # Pass the 'time' parameter if provided
+            return list(ddgs.text(query, max_results=max_results, time=time_filter))
     except Exception:
         return []
 
@@ -74,7 +78,7 @@ async def search_web(query: str, claim_id: str, claim_text: str) -> Tuple[List[E
     loop = asyncio.get_event_loop()
     try:
         results = await asyncio.wait_for(
-            loop.run_in_executor(_process_pool, partial(_ddg_search_sync, query, 3)),
+            loop.run_in_executor(_process_pool, partial(_ddg_search_sync, query, 3, 'm')),
             timeout=SEARCH_TIMEOUT,
         )
     except (asyncio.TimeoutError, Exception):
